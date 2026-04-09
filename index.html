@@ -90,9 +90,11 @@ canvas { display: block; }
 }
 .shop-item:hover { border-color: #ff6; }
 .shop-item.owned { border-color: #0a0; }
+.shop-item.locked { opacity: 0.4; cursor: not-allowed; }
 .shop-item-name { color: #ff6; font-size: 1em; margin-bottom: 4px; }
 .shop-item-price { color: #aaa; font-size: 0.9em; }
 .shop-item-desc { color: #888; font-size: 0.8em; margin-top: 4px; }
+.shop-item-lock { color: #f66; font-size: 0.75em; margin-top: 2px; }
 .shop-done-btn {
   margin-top: 15px; padding: 16px 36px; background: #363; color: #6f6;
   border: 2px solid #6f6; border-radius: 8px; font-size: 1.1em; cursor: pointer;
@@ -108,6 +110,53 @@ canvas { display: block; }
 }
 .msg-box.hidden { display: none; }
 .msg-box .sub { color: #aaa; font-size: 0.7em; margin-top: 8px; }
+/* Volume control */
+.vol-group { position: absolute; top: 36px; right: 10px; z-index: 25; display: flex; align-items: center; gap: 4px; color: #aaa; font-size: 11px; background: rgba(0,0,0,0.5); padding: 3px 8px; border-radius: 4px; }
+.vol-group input[type=range] { width: 60px; height: 16px; accent-color: #f90; }
+/* Floating damage numbers */
+.dmg-float { position: absolute; pointer-events: none; font-weight: bold; font-family: 'Courier New', monospace; z-index: 30; text-shadow: 1px 1px 2px #000; animation: dmgUp 1.2s ease-out forwards; }
+@keyframes dmgUp { 0% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-60px); } }
+/* Kill streak */
+.streak-announce { position: absolute; top: 30%; left: 50%; transform: translate(-50%,-50%); font-size: 2.5em; font-weight: bold; color: #f44; text-shadow: 0 0 20px #f00, 3px 3px 0 #000; z-index: 160; pointer-events: none; animation: streakPop 2s ease-out forwards; font-family: 'Courier New', monospace; }
+@keyframes streakPop { 0% { opacity: 0; transform: translate(-50%,-50%) scale(0.3); } 15% { opacity: 1; transform: translate(-50%,-50%) scale(1.2); } 30% { transform: translate(-50%,-50%) scale(1); } 80% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%,-50%) scale(1); } }
+/* Victory screen */
+.victory-overlay {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  background: rgba(0,0,0,0.9); z-index: 250;
+}
+.victory-overlay.hidden { display: none; }
+.victory-title { font-size: 2.2em; margin-bottom: 15px; text-shadow: 3px 3px 0 #000; }
+.victory-stats { color: #ccc; font-size: 1em; line-height: 1.8; text-align: center; margin-bottom: 20px; }
+.victory-stats span { color: #ff6; }
+/* Stats screen */
+.stats-overlay {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  background: rgba(0,0,0,0.92); z-index: 200;
+}
+.stats-overlay.hidden { display: none; }
+.stats-title { font-size: 1.8em; color: #ff6; margin-bottom: 15px; text-shadow: 2px 2px 0 #a30; }
+.stats-body { color: #ccc; font-size: 1em; line-height: 2; text-align: center; }
+.stats-body span { color: #ff6; font-weight: bold; }
+.stats-close-btn {
+  margin-top: 20px; padding: 14px 30px; background: #433; color: #f99;
+  border: 2px solid #f66; border-radius: 8px; font-size: 1em; cursor: pointer;
+  font-family: 'Courier New', monospace; min-height: 48px;
+}
+/* Biome selector */
+.biome-select { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; justify-content: center; }
+.biome-btn {
+  padding: 8px 12px; background: #334; color: #8cf; border: 1px solid #568;
+  border-radius: 6px; font-size: 12px; cursor: pointer; font-family: 'Courier New', monospace;
+  min-height: 36px;
+}
+.biome-btn:hover, .biome-btn.active { background: #456; border-color: #ff6; color: #ff6; }
+/* Level badge in menu */
+.menu-level { color: #8cf; font-size: 0.9em; margin-bottom: 15px; }
+/* Smoke overlay effect on canvas */
+.smoke-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5; background: rgba(80,80,80,0.7); transition: opacity 0.5s; }
+.smoke-overlay.hidden { opacity: 0; pointer-events: none; }
 /* Mobile-friendly: larger touch targets on small screens */
 @media (max-width: 640px) {
   .ctrl-group input[type=range] { width: 100px; height: 32px; }
@@ -119,6 +168,7 @@ canvas { display: block; }
   .hp-bar-bg { width: 60px; }
   .menu-btn { width: 90%; max-width: 300px; padding: 18px 24px; font-size: 1.2em; }
   .shop-grid { grid-template-columns: 1fr; max-width: 90%; }
+  .biome-btn { font-size: 11px; padding: 6px 8px; }
 }
 @media (max-height: 480px) {
   .controls-bar { padding: 6px 8px; gap: 8px; }
@@ -134,9 +184,19 @@ canvas { display: block; }
   <div id="menu-screen" class="screen-overlay">
     <div class="menu-title">TANK BLASTER 2</div>
     <div class="menu-subtitle">The Crazy Artillery Game</div>
+    <div id="menu-level" class="menu-level"></div>
     <button class="menu-btn" onclick="Game.startQuickMatch()">Quick Match (2P Local)</button>
     <button class="menu-btn" onclick="Game.showAISelect()">Vs AI</button>
     <button class="menu-btn" onclick="Game.startCampaign()">Campaign (10 Levels)</button>
+    <button class="menu-btn" onclick="Game.showStats()">Stats & Progress</button>
+    <div id="biome-select" class="biome-select">
+      <button class="biome-btn active" onclick="Game.selectBiome('tropical')">Tropical</button>
+      <button class="biome-btn" onclick="Game.selectBiome('desert')">Desert</button>
+      <button class="biome-btn" onclick="Game.selectBiome('winter')">Winter</button>
+      <button class="biome-btn" onclick="Game.selectBiome('volcanic')">Volcanic</button>
+      <button class="biome-btn" onclick="Game.selectBiome('space')">Space</button>
+      <button class="biome-btn" onclick="Game.selectBiome('city')">City</button>
+    </div>
     <div id="ai-select" class="ai-select" style="display:none;">
       <button class="menu-btn" style="width:auto;padding:10px 16px" onclick="Game.startVsAI('easy')">Easy</button>
       <button class="menu-btn" style="width:auto;padding:10px 16px" onclick="Game.startVsAI('medium')">Medium</button>
@@ -157,37 +217,57 @@ canvas { display: block; }
     </div>
     <div class="hud-section">
       <span class="hud-label">Coins:</span><span id="hud-coins" class="hud-val">0</span>
+      <span class="hud-label">Lv:</span><span id="hud-level" class="hud-val">1</span>
     </div>
+  </div>
+  <!-- Volume -->
+  <div id="vol-ctrl" class="vol-group">
+    <span>Vol:</span>
+    <input type="range" id="vol-slider" min="0" max="100" value="50">
   </div>
   <!-- Controls -->
   <div id="controls" class="controls-bar hidden">
     <div class="ctrl-group">
       <span>Angle:</span>
       <input type="range" id="ctrl-angle" min="0" max="180" value="45">
-      <span id="ctrl-angle-val">45°</span>
+      <span id="ctrl-angle-val">45&deg;</span>
     </div>
     <div class="ctrl-group">
       <span>Power:</span>
       <input type="range" id="ctrl-power" min="5" max="100" value="50">
       <span id="ctrl-power-val">50%</span>
     </div>
-    <button class="weapon-btn" id="weapon-cycle" onclick="Game.cycleWeapon()">Shell ∞</button>
+    <button class="weapon-btn" id="weapon-cycle" onclick="Game.cycleWeapon()">Shell &infin;</button>
     <button class="fire-btn" id="fire-btn" onclick="Game.fire()">FIRE!</button>
   </div>
   <!-- Message box -->
   <div id="msg-box" class="msg-box hidden"></div>
   <!-- Shop -->
   <div id="shop-screen" class="shop-overlay hidden">
-    <div class="shop-title">⚔ WEAPONS SHOP ⚔</div>
+    <div class="shop-title">&#9876; WEAPONS SHOP &#9876;</div>
     <div id="shop-coins" class="shop-coins">Coins: 0</div>
     <div id="shop-grid" class="shop-grid"></div>
     <button class="shop-done-btn" onclick="Game.closeShop()">READY FOR BATTLE!</button>
   </div>
+  <!-- Stats screen -->
+  <div id="stats-screen" class="stats-overlay hidden">
+    <div class="stats-title">PLAYER STATS</div>
+    <div id="stats-body" class="stats-body"></div>
+    <button class="stats-close-btn" onclick="Game.closeStats()">BACK</button>
+  </div>
+  <!-- Victory screen -->
+  <div id="victory-screen" class="victory-overlay hidden">
+    <div id="victory-title" class="victory-title"></div>
+    <div id="victory-stats" class="victory-stats"></div>
+    <button class="menu-btn" onclick="Game.closeVictory()">CONTINUE</button>
+  </div>
+  <!-- Smoke screen overlay -->
+  <div id="smoke-screen" class="smoke-overlay hidden"></div>
 </div>
 
 <script>
 // ============================================================
-// TANK BLASTER 2 — Complete Game Engine
+// TANK BLASTER 2 — Complete Game Engine (Enhanced Edition)
 // ============================================================
 
 // --- Canvas Setup ---
@@ -205,11 +285,19 @@ resizeCanvas();
 // --- Audio Engine (Web Audio API, no files) ---
 const Audio = (() => {
   let actx = null;
+  let masterVol = 0.5;
+  let masterGain = null;
   function ensure() {
-    if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)();
+    if (!actx) {
+      actx = new (window.AudioContext || window.webkitAudioContext)();
+      masterGain = actx.createGain();
+      masterGain.gain.value = masterVol;
+      masterGain.connect(actx.destination);
+    }
     if (actx.state === 'suspended') actx.resume();
     return actx;
   }
+  function getDest() { ensure(); return masterGain; }
   function noise(duration, freq, type, vol) {
     const a = ensure();
     const osc = a.createOscillator();
@@ -218,7 +306,7 @@ const Audio = (() => {
     osc.frequency.setValueAtTime(freq, a.currentTime);
     gain.gain.setValueAtTime(vol || 0.3, a.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.001, a.currentTime + duration);
-    osc.connect(gain); gain.connect(a.destination);
+    osc.connect(gain); gain.connect(getDest());
     osc.start(); osc.stop(a.currentTime + duration);
   }
   function explosion(big) {
@@ -232,50 +320,202 @@ const Audio = (() => {
     const gain = a.createGain();
     gain.gain.setValueAtTime(big ? 0.5 : 0.3, a.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.001, a.currentTime + (big ? 0.8 : 0.4));
-    src.connect(gain); gain.connect(a.destination);
+    src.connect(gain); gain.connect(getDest());
     src.start();
   }
   return {
+    setVolume(v) { masterVol = v; if (masterGain) masterGain.gain.value = v; },
     fire() { noise(0.15, 150, 'square', 0.4); noise(0.1, 80, 'sawtooth', 0.3); },
     explode(big) { explosion(big); },
     wind() { noise(0.6, 200, 'sine', 0.05); },
     thunder() { noise(0.5, 60, 'sawtooth', 0.5); setTimeout(() => noise(0.4, 40, 'square', 0.4), 100); },
     click() { noise(0.05, 800, 'square', 0.1); },
     win() { noise(0.2, 523, 'square', 0.2); setTimeout(() => noise(0.2, 659, 'square', 0.2), 200); setTimeout(() => noise(0.4, 784, 'square', 0.2), 400); },
+    laser() { noise(0.3, 1200, 'sawtooth', 0.3); noise(0.2, 800, 'square', 0.2); },
+    heal() { noise(0.15, 600, 'sine', 0.2); setTimeout(() => noise(0.15, 800, 'sine', 0.2), 150); setTimeout(() => noise(0.2, 1000, 'sine', 0.2), 300); },
+    rumble() { noise(0.8, 40, 'sawtooth', 0.5); noise(0.6, 30, 'square', 0.4); },
+    bounce() { noise(0.08, 400, 'square', 0.2); },
   };
 })();
+
+// Volume slider
+document.getElementById('vol-slider').addEventListener('input', function() {
+  Audio.setVolume(this.value / 100);
+});
 
 // Resume audio on first interaction
 document.addEventListener('pointerdown', () => { try { Audio.click(); } catch(e){} }, { once: true });
 
+// --- Biome Definitions ---
+const BIOMES = {
+  tropical: {
+    name: 'Tropical',
+    sky: [['#1e90ff',0],['#4db8ff',0.3],['#87ceeb',0.6],['#ffe4b5',0.85],['#ff9966',1]],
+    terrainTop: '#3a8c3a', terrainTopDark: '#2e7a2e', terrainEdge: '#4a9a4a',
+    terrainGrad: [['#c4a44a',0],['#b0903a',0.3],['#8a6e2f',1]],
+    waterGrad: [['#2a9ad4',0],['#1a7ab4',0.3],['#0d5a8d',0.7],['#063a5d',1]],
+    foam: '#e8d8a8', waterHighlight: 'rgba(100,200,255,0.2)', waterFoam: 'rgba(255,255,255,0.5)',
+    sunColor: '#fff5cc', sunGlowInner: 'rgba(255,255,200,0.9)', sunGlowOuter: 'rgba(255,150,50,0)',
+    hasTrees: true, hasHuts: true, hasSnow: false, hasLava: false, hasStars: false, hasBuildings: false,
+    gravity: 0.08, treeName: 'palm', particleColor: null
+  },
+  desert: {
+    name: 'Desert',
+    sky: [['#ff8c00',0],['#ffa500',0.2],['#ffd700',0.5],['#ffe4b5',0.8],['#f5deb3',1]],
+    terrainTop: '#d4a044', terrainTopDark: '#c49034', terrainEdge: '#dab054',
+    terrainGrad: [['#e8c870',0],['#d4a844',0.3],['#b08830',1]],
+    waterGrad: [['#e8c870',0],['#d4a844',0.5],['#b08830',1]],
+    foam: '#d4b870', waterHighlight: 'rgba(200,180,100,0.1)', waterFoam: 'rgba(230,210,150,0.3)',
+    sunColor: '#fff5aa', sunGlowInner: 'rgba(255,240,150,1)', sunGlowOuter: 'rgba(255,200,50,0)',
+    hasTrees: true, hasHuts: true, hasSnow: false, hasLava: false, hasStars: false, hasBuildings: false,
+    gravity: 0.08, treeName: 'cactus', particleColor: null
+  },
+  winter: {
+    name: 'Winter',
+    sky: [['#4a6a8a',0],['#6a8aaa',0.3],['#8aaaca',0.6],['#bacade',0.85],['#dde8f0',1]],
+    terrainTop: '#e8e8f0', terrainTopDark: '#d0d0e0', terrainEdge: '#f0f0ff',
+    terrainGrad: [['#e0e0e8',0],['#c8c8d8',0.3],['#a0a0b8',1]],
+    waterGrad: [['#8ab8d8',0],['#6898c0',0.3],['#4878a8',0.7],['#305888',1]],
+    foam: '#d0e0f0', waterHighlight: 'rgba(150,200,255,0.2)', waterFoam: 'rgba(220,240,255,0.5)',
+    sunColor: '#e8e0d0', sunGlowInner: 'rgba(230,220,200,0.7)', sunGlowOuter: 'rgba(200,190,170,0)',
+    hasTrees: true, hasHuts: true, hasSnow: true, hasLava: false, hasStars: false, hasBuildings: false,
+    gravity: 0.08, treeName: 'pine', particleColor: '#fff'
+  },
+  volcanic: {
+    name: 'Volcanic',
+    sky: [['#1a0a0a',0],['#3a1515',0.3],['#5a2020',0.6],['#7a3030',0.85],['#4a1a1a',1]],
+    terrainTop: '#5a3a2a', terrainTopDark: '#4a2a1a', terrainEdge: '#6a4a3a',
+    terrainGrad: [['#5a3020',0],['#4a2818',0.3],['#3a1810',1]],
+    waterGrad: [['#ff4400',0],['#dd3300',0.3],['#bb2200',0.7],['#881100',1]],
+    foam: '#ff6620', waterHighlight: 'rgba(255,100,0,0.3)', waterFoam: 'rgba(255,200,50,0.5)',
+    sunColor: '#ff8844', sunGlowInner: 'rgba(255,100,30,0.8)', sunGlowOuter: 'rgba(255,50,0,0)',
+    hasTrees: false, hasHuts: false, hasSnow: false, hasLava: true, hasStars: false, hasBuildings: false,
+    gravity: 0.08, treeName: null, particleColor: '#f80'
+  },
+  space: {
+    name: 'Space',
+    sky: [['#000010',0],['#000020',0.5],['#0a0a30',1]],
+    terrainTop: '#666', terrainTopDark: '#555', terrainEdge: '#777',
+    terrainGrad: [['#888',0],['#666',0.3],['#444',1]],
+    waterGrad: [['#000010',0],['#000008',0.5],['#000004',1]],
+    foam: '#222', waterHighlight: 'rgba(50,50,80,0.1)', waterFoam: 'rgba(50,50,80,0.2)',
+    sunColor: '#ffe', sunGlowInner: 'rgba(255,255,200,0.5)', sunGlowOuter: 'rgba(100,100,200,0)',
+    hasTrees: false, hasHuts: false, hasSnow: false, hasLava: false, hasStars: true, hasBuildings: false,
+    gravity: 0.03, treeName: null, particleColor: null, noWind: true
+  },
+  city: {
+    name: 'City',
+    sky: [['#2a3a5a',0],['#4a5a7a',0.3],['#6a7a9a',0.6],['#8a9aba',0.85],['#aabada',1]],
+    terrainTop: '#556', terrainTopDark: '#445', terrainEdge: '#667',
+    terrainGrad: [['#667',0],['#556',0.3],['#445',1]],
+    waterGrad: [['#2a5a7a',0],['#1a4a6a',0.3],['#0a3a5a',0.7],['#002a4a',1]],
+    foam: '#6a8a9a', waterHighlight: 'rgba(80,150,200,0.15)', waterFoam: 'rgba(180,210,230,0.4)',
+    sunColor: '#ffe8cc', sunGlowInner: 'rgba(255,230,180,0.7)', sunGlowOuter: 'rgba(255,180,100,0)',
+    hasTrees: true, hasHuts: false, hasSnow: false, hasLava: false, hasStars: false, hasBuildings: true,
+    gravity: 0.08, treeName: 'lamp', particleColor: null
+  }
+};
+
 // --- Weapon Definitions ---
 const WEAPONS = {
-  shell:    { name: 'Shell',       price: 0,    damage: 25, radius: 30, desc: 'Basic shot', icon: '●' },
-  heavy:    { name: 'Heavy Shell', price: 100,  damage: 40, radius: 45, desc: 'More damage, bigger boom', icon: '◉' },
-  cluster:  { name: 'Cluster Bomb',price: 200,  damage: 15, radius: 20, desc: 'Splits into 5 mini-bombs', icon: '✸' },
-  napalm:   { name: 'Napalm',     price: 150,  damage: 10, radius: 15, desc: 'Burns along terrain', icon: '🔥' },
-  drill:    { name: 'Drill Bomb', price: 120,  damage: 30, radius: 25, desc: 'Penetrates terrain', icon: '⬇' },
-  shield:   { name: 'Shield',     price: 100,  damage: 0,  radius: 0,  desc: 'Blocks one hit', icon: '🛡' },
-  teleport: { name: 'Teleport',   price: 100,  damage: 0,  radius: 0,  desc: 'Move to random spot', icon: '⚡' },
-  airstrike:{ name: 'Airstrike',  price: 200,  damage: 20, radius: 25, desc: 'Plane drops bombs', icon: '✈' },
-  nuke:     { name: 'MEGA NUKE',  price: 500,  damage: 80, radius: 100,desc: 'Massive explosion!', icon: '☢' },
+  shell:    { name: 'Shell',       price: 0,    damage: 25, radius: 30, desc: 'Basic shot', icon: '●', unlockLevel: 1 },
+  heavy:    { name: 'Heavy Shell', price: 100,  damage: 40, radius: 45, desc: 'More damage, bigger boom', icon: '◉', unlockLevel: 1 },
+  cluster:  { name: 'Cluster Bomb',price: 200,  damage: 15, radius: 20, desc: 'Splits into 5 mini-bombs', icon: '✸', unlockLevel: 2 },
+  napalm:   { name: 'Napalm',     price: 150,  damage: 10, radius: 15, desc: 'Burns along terrain', icon: '🔥', unlockLevel: 2 },
+  drill:    { name: 'Drill Bomb', price: 120,  damage: 30, radius: 25, desc: 'Penetrates terrain', icon: '⬇', unlockLevel: 3 },
+  bouncing: { name: 'Bouncy Bomb', price: 130,  damage: 20, radius: 25, desc: 'Bounces off terrain 3 times', icon: '⬡', unlockLevel: 3 },
+  laser:    { name: 'Laser Beam', price: 180,  damage: 15, radius: 5,  desc: 'Instant hit, no arc', icon: '⚡', unlockLevel: 4 },
+  repair:   { name: 'Repair Kit', price: 80,   damage: 0,  radius: 0,  desc: 'Heals 25 HP', icon: '➕', unlockLevel: 4 },
+  dig:      { name: 'Dig Tool',   price: 60,   damage: 0,  radius: 0,  desc: 'Removes terrain below you', icon: '⛏', unlockLevel: 5 },
+  smoke:    { name: 'Smoke Screen',price: 100,  damage: 0,  radius: 0,  desc: 'Obscures enemy view 1 turn', icon: '🌫', unlockLevel: 5 },
+  shield:   { name: 'Shield',     price: 100,  damage: 0,  radius: 0,  desc: 'Blocks one hit', icon: '🛡', unlockLevel: 6 },
+  teleport: { name: 'Teleport',   price: 100,  damage: 0,  radius: 0,  desc: 'Move to random spot', icon: '⚡', unlockLevel: 6 },
+  homing:   { name: 'Homing Missile',price: 250, damage: 30, radius: 30, desc: 'Slowly tracks enemy', icon: '🎯', unlockLevel: 7 },
+  earthquake:{ name: 'Earthquake', price: 200,  damage: 20, radius: 0,  desc: 'Shakes terrain, hurts both', icon: '🌋', unlockLevel: 7 },
+  meteor:   { name: 'Meteor Shower',price: 250, damage: 18, radius: 22, desc: 'Random strikes from sky', icon: '☄', unlockLevel: 8 },
+  airstrike:{ name: 'Airstrike',  price: 200,  damage: 20, radius: 25, desc: 'Plane drops bombs', icon: '✈', unlockLevel: 9 },
+  nuke:     { name: 'MEGA NUKE',  price: 500,  damage: 80, radius: 100,desc: 'Massive explosion!', icon: '☢', unlockLevel: 10 },
 };
+
+// --- Progression System ---
+const Progression = {
+  data: null,
+  xpPerLevel: 200,
+
+  defaults() {
+    return {
+      xp: 0, level: 1,
+      totalGames: 0, wins: 0, totalDamage: 0, totalKills: 0,
+      weaponUses: {}, killStreakMax: 0,
+      selectedBiome: 'tropical'
+    };
+  },
+
+  load() {
+    try {
+      const raw = localStorage.getItem('tankblaster2_progress');
+      if (raw) {
+        this.data = { ...this.defaults(), ...JSON.parse(raw) };
+      } else {
+        this.data = this.defaults();
+      }
+    } catch(e) {
+      this.data = this.defaults();
+    }
+  },
+
+  save() {
+    try { localStorage.setItem('tankblaster2_progress', JSON.stringify(this.data)); } catch(e) {}
+  },
+
+  addXP(amount) {
+    this.data.xp += amount;
+    const oldLevel = this.data.level;
+    this.data.level = Math.floor(this.data.xp / this.xpPerLevel) + 1;
+    this.save();
+    return this.data.level > oldLevel;
+  },
+
+  isWeaponUnlocked(weaponKey) {
+    const w = WEAPONS[weaponKey];
+    return w && this.data.level >= w.unlockLevel;
+  },
+
+  recordGame(won, damageDealt, kills, weaponUsed) {
+    this.data.totalGames++;
+    if (won) this.data.wins++;
+    this.data.totalDamage += damageDealt;
+    this.data.totalKills += kills;
+    if (weaponUsed) {
+      this.data.weaponUses[weaponUsed] = (this.data.weaponUses[weaponUsed] || 0) + 1;
+    }
+    this.save();
+  },
+
+  favoriteWeapon() {
+    let best = 'shell', max = 0;
+    for (const [k, v] of Object.entries(this.data.weaponUses)) {
+      if (v > max) { max = v; best = k; }
+    }
+    return WEAPONS[best] ? WEAPONS[best].name : 'Shell';
+  }
+};
+Progression.load();
 
 // --- Terrain ---
 const Terrain = {
-  data: null, // Uint8Array heightmap (height at each x pixel)
+  data: null,
   palmTrees: [],
-
   huts: [],
+  buildings: [],
+  craters: [],
 
-  generate(w, h) {
+  generate(w, h, biome) {
     this.data = new Float32Array(w);
-    // Midpoint displacement for hilly terrain
     const baseH = h * 0.45;
     const waterLine = h * 0.85;
     for (let i = 0; i < w; i++) this.data[i] = baseH;
 
-    // Multiple sine waves for interesting terrain
     const seed = Math.random() * 1000;
     for (let i = 0; i < w; i++) {
       this.data[i] = baseH
@@ -290,23 +530,68 @@ const Terrain = {
         this.data[i] = (this.data[i-1] + this.data[i] + this.data[i+1]) / 3;
       }
     }
+    // Space biome: add craters
+    if (biome === 'space') {
+      this.craters = [];
+      for (let c = 0; c < 6; c++) {
+        const cx = 80 + Math.random() * (w - 160);
+        const cr = 20 + Math.random() * 40;
+        this.craters.push({ x: cx, r: cr });
+        for (let x = Math.floor(cx - cr); x <= Math.ceil(cx + cr); x++) {
+          if (x < 0 || x >= w) continue;
+          const dist = Math.abs(x - cx) / cr;
+          const depth = Math.sqrt(Math.max(0, 1 - dist * dist)) * cr * 0.3;
+          this.data[x] += depth;
+          // rim
+          if (dist > 0.8 && dist < 1.1) this.data[x] -= cr * 0.1;
+        }
+      }
+    } else {
+      this.craters = [];
+    }
+    // City biome: flatter terrain with building platforms
+    if (biome === 'city') {
+      // Flatten somewhat
+      for (let pass = 0; pass < 10; pass++) {
+        for (let i = 1; i < w - 1; i++) {
+          this.data[i] = (this.data[i-1] + this.data[i] + this.data[i+1]) / 3;
+        }
+      }
+    }
     // Clamp
     for (let i = 0; i < w; i++) {
       this.data[i] = Math.max(h * 0.2, Math.min(waterLine - 20, this.data[i]));
     }
 
-    // Generate palm trees
+    const b = BIOMES[biome] || BIOMES.tropical;
+
+    // Generate trees/decorations
     this.palmTrees = [];
-    for (let i = 0; i < 8; i++) {
-      const x = 50 + Math.random() * (w - 100);
-      this.palmTrees.push({ x, alive: true });
+    if (b.hasTrees) {
+      for (let i = 0; i < 8; i++) {
+        const x = 50 + Math.random() * (w - 100);
+        this.palmTrees.push({ x, alive: true });
+      }
     }
 
-    // Generate huts (2-3 small destructible buildings)
+    // Generate huts
     this.huts = [];
-    for (let i = 0; i < 3; i++) {
-      const x = w * 0.2 + Math.random() * (w * 0.6);
-      this.huts.push({ x, w: 20 + Math.random() * 10, h: 18 + Math.random() * 10, alive: true });
+    if (b.hasHuts) {
+      for (let i = 0; i < 3; i++) {
+        const x = w * 0.2 + Math.random() * (w * 0.6);
+        this.huts.push({ x, w: 20 + Math.random() * 10, h: 18 + Math.random() * 10, alive: true });
+      }
+    }
+
+    // Buildings for city biome
+    this.buildings = [];
+    if (b.hasBuildings) {
+      for (let i = 0; i < 5; i++) {
+        const x = w * 0.1 + Math.random() * (w * 0.8);
+        const bw = 30 + Math.random() * 20;
+        const bh = 40 + Math.random() * 60;
+        this.buildings.push({ x, w: bw, h: bh, alive: true, color: ['#556','#667','#778','#445'][Math.floor(Math.random()*4)] });
+      }
     }
   },
 
@@ -315,29 +600,37 @@ const Terrain = {
     return this.data[ix] || H * 0.5;
   },
 
-  // Destroy terrain in a circle
   crater(cx, cy, radius) {
     for (let x = Math.floor(cx - radius); x <= Math.ceil(cx + radius); x++) {
       if (x < 0 || x >= W) continue;
       const dy = Math.sqrt(Math.max(0, radius * radius - (x - cx) * (x - cx)));
       const terrainY = this.data[x];
-      // If explosion center is at or below terrain, dig into it
       if (cy >= terrainY - radius) {
         const newY = Math.max(terrainY, cy + dy);
         this.data[x] = Math.min(H * 0.85, newY);
       }
     }
-    // Destroy nearby palm trees
     this.palmTrees.forEach(t => {
       if (t.alive && Math.abs(t.x - cx) < radius) t.alive = false;
     });
-    // Destroy nearby huts
     this.huts.forEach(h => {
       if (h.alive && Math.abs(h.x - cx) < radius + h.w) h.alive = false;
     });
+    this.buildings.forEach(b => {
+      if (b.alive && Math.abs(b.x - cx) < radius + b.w) b.alive = false;
+    });
   },
 
-  // Burn napalm along surface
+  digBelow(x, depth) {
+    const spread = 25;
+    for (let dx = -spread; dx <= spread; dx++) {
+      const ix = Math.floor(x + dx);
+      if (ix < 0 || ix >= W) continue;
+      const factor = 1 - Math.abs(dx) / spread;
+      this.data[ix] = Math.min(H * 0.85, this.data[ix] + depth * factor);
+    }
+  },
+
   burnSurface(cx, spread) {
     for (let x = Math.floor(cx - spread); x <= Math.ceil(cx + spread); x++) {
       if (x < 0 || x >= W) continue;
@@ -345,30 +638,35 @@ const Terrain = {
     }
   },
 
-  draw(ctx) {
+  shakeEarthquake() {
+    for (let i = 0; i < W; i++) {
+      this.data[i] += (Math.random() - 0.5) * 8;
+      this.data[i] = Math.max(H * 0.2, Math.min(H * 0.85 - 20, this.data[i]));
+    }
+    // Smooth a bit
+    for (let i = 1; i < W - 1; i++) {
+      this.data[i] = (this.data[i-1] + this.data[i] + this.data[i+1]) / 3;
+    }
+  },
+
+  draw(ctx, biomeKey) {
+    const b = BIOMES[biomeKey] || BIOMES.tropical;
     // Terrain fill
     ctx.beginPath();
     ctx.moveTo(0, H);
-    for (let x = 0; x < W; x++) {
-      ctx.lineTo(x, this.data[x]);
-    }
+    for (let x = 0; x < W; x++) ctx.lineTo(x, this.data[x]);
     ctx.lineTo(W, H);
     ctx.closePath();
 
-    // Sandy gradient
     const tGrad = ctx.createLinearGradient(0, H * 0.3, 0, H);
-    tGrad.addColorStop(0, '#c4a44a');
-    tGrad.addColorStop(0.3, '#b0903a');
-    tGrad.addColorStop(1, '#8a6e2f');
+    b.terrainGrad.forEach(([c, s]) => tGrad.addColorStop(s, c));
     ctx.fillStyle = tGrad;
     ctx.fill();
 
-    // Green grass strip on top of terrain
+    // Grass/top strip
     ctx.beginPath();
     ctx.moveTo(0, H);
-    for (let x = 0; x < W; x++) {
-      ctx.lineTo(x, this.data[x]);
-    }
+    for (let x = 0; x < W; x++) ctx.lineTo(x, this.data[x]);
     ctx.lineTo(W, H);
     ctx.closePath();
     ctx.save();
@@ -376,80 +674,28 @@ const Terrain = {
     for (let x = 0; x < W; x++) {
       const grassH = 8 + Math.sin(x * 0.1) * 2;
       const gy = this.data[x];
-      ctx.fillStyle = '#3a8c3a';
+      ctx.fillStyle = b.terrainTop;
       ctx.fillRect(x, gy, 1, grassH);
-      ctx.fillStyle = '#2e7a2e';
+      ctx.fillStyle = b.terrainTopDark;
       ctx.fillRect(x, gy, 1, 3);
     }
     ctx.restore();
 
     // Terrain top edge highlight
     ctx.beginPath();
-    for (let x = 0; x < W; x += 2) {
-      ctx.lineTo(x, this.data[x]);
-    }
-    ctx.strokeStyle = '#4a9a4a';
+    for (let x = 0; x < W; x += 2) ctx.lineTo(x, this.data[x]);
+    ctx.strokeStyle = b.terrainEdge;
     ctx.lineWidth = 2;
     ctx.stroke();
 
-    // Palm trees
+    // Trees/decorations
     this.palmTrees.forEach(t => {
       if (!t.alive) return;
       const tx = t.x, ty = this.data[Math.floor(tx)];
-      const h = 55 + (t.x % 20); // vary height
-      const lean = Math.sin(t.x * 0.3) * 10;
-      const topX = tx + lean, topY = ty - h;
-      // Trunk shadow
-      ctx.strokeStyle = '#4a2a10';
-      ctx.lineWidth = 6;
-      ctx.beginPath();
-      ctx.moveTo(tx, ty);
-      ctx.quadraticCurveTo(tx + lean * 0.5, ty - h * 0.5, topX, topY);
-      ctx.stroke();
-      // Trunk
-      ctx.strokeStyle = '#8b5a2b';
-      ctx.lineWidth = 4;
-      ctx.beginPath();
-      ctx.moveTo(tx, ty);
-      ctx.quadraticCurveTo(tx + lean * 0.5, ty - h * 0.5, topX, topY);
-      ctx.stroke();
-      // Trunk rings
-      ctx.strokeStyle = '#6b3a1b';
-      ctx.lineWidth = 1;
-      for (let r = 0.2; r < 0.9; r += 0.15) {
-        const rx = tx + lean * r, ry = ty - h * r;
-        ctx.beginPath();
-        ctx.moveTo(rx - 3, ry); ctx.lineTo(rx + 3, ry);
-        ctx.stroke();
-      }
-      // Leaves (7 fronds, drooping)
-      for (let a = 0; a < 7; a++) {
-        const angle = -Math.PI / 2 + (a - 3) * 0.45;
-        const len = 30 + Math.random() * 10;
-        const droop = 12;
-        const endX = topX + Math.cos(angle) * len;
-        const endY = topY + Math.sin(angle) * len + droop;
-        const cpX = topX + Math.cos(angle) * len * 0.6;
-        const cpY = topY + Math.sin(angle) * len * 0.3;
-        // Leaf shadow
-        ctx.strokeStyle = '#1a5a1a';
-        ctx.lineWidth = 4;
-        ctx.beginPath(); ctx.moveTo(topX, topY);
-        ctx.quadraticCurveTo(cpX, cpY, endX, endY);
-        ctx.stroke();
-        // Leaf
-        ctx.strokeStyle = '#2d8a2d';
-        ctx.lineWidth = 3;
-        ctx.beginPath(); ctx.moveTo(topX, topY);
-        ctx.quadraticCurveTo(cpX, cpY, endX, endY);
-        ctx.stroke();
-      }
-      // Coconuts (2-3 at base of fronds)
-      ctx.fillStyle = '#6b3a1b';
-      for (let c = 0; c < 3; c++) {
-        const cx = topX - 4 + c * 4, cy = topY + 2 + c * 2;
-        ctx.beginPath(); ctx.arc(cx, cy, 3, 0, Math.PI * 2); ctx.fill();
-      }
+      if (b.treeName === 'palm') this.drawPalm(ctx, tx, ty, t);
+      else if (b.treeName === 'cactus') this.drawCactus(ctx, tx, ty);
+      else if (b.treeName === 'pine') this.drawPine(ctx, tx, ty);
+      else if (b.treeName === 'lamp') this.drawLamp(ctx, tx, ty);
     });
 
     // Huts
@@ -457,27 +703,23 @@ const Terrain = {
       if (!h.alive) return;
       const hx = h.x, hy = this.data[Math.floor(hx)];
       const hw = h.w, hh = h.h;
-      // Wall
       ctx.fillStyle = '#c9a96e';
       ctx.fillRect(hx - hw/2, hy - hh, hw, hh);
       ctx.strokeStyle = '#8a6e3a';
       ctx.lineWidth = 1;
       ctx.strokeRect(hx - hw/2, hy - hh, hw, hh);
-      // Door
       ctx.fillStyle = '#5a3a1a';
       ctx.fillRect(hx - 3, hy - 10, 6, 10);
-      // Thatched roof (triangle)
       ctx.beginPath();
       ctx.moveTo(hx - hw/2 - 5, hy - hh);
       ctx.lineTo(hx, hy - hh - 12);
       ctx.lineTo(hx + hw/2 + 5, hy - hh);
       ctx.closePath();
-      ctx.fillStyle = '#8a6a2a';
+      ctx.fillStyle = b.hasSnow ? '#e8e8f0' : '#8a6a2a';
       ctx.fill();
       ctx.strokeStyle = '#6a4a1a';
       ctx.lineWidth = 1;
       ctx.stroke();
-      // Straw texture lines on roof
       ctx.strokeStyle = '#a07a3a';
       ctx.lineWidth = 0.5;
       for (let s = -hw/2; s < hw/2; s += 4) {
@@ -487,6 +729,112 @@ const Terrain = {
         ctx.stroke();
       }
     });
+
+    // Buildings (city biome)
+    this.buildings.forEach(bd => {
+      if (!bd.alive) return;
+      const bx = bd.x, by = this.data[Math.floor(bx)];
+      ctx.fillStyle = bd.color;
+      ctx.fillRect(bx - bd.w/2, by - bd.h, bd.w, bd.h);
+      ctx.strokeStyle = '#334';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(bx - bd.w/2, by - bd.h, bd.w, bd.h);
+      // Windows
+      ctx.fillStyle = '#ffa';
+      for (let wy = by - bd.h + 6; wy < by - 4; wy += 10) {
+        for (let wx = bx - bd.w/2 + 5; wx < bx + bd.w/2 - 3; wx += 8) {
+          ctx.fillRect(wx, wy, 4, 5);
+        }
+      }
+    });
+  },
+
+  drawPalm(ctx, tx, ty, t) {
+    const h = 55 + (t.x % 20);
+    const lean = Math.sin(t.x * 0.3) * 10;
+    const topX = tx + lean, topY = ty - h;
+    ctx.strokeStyle = '#4a2a10'; ctx.lineWidth = 6;
+    ctx.beginPath(); ctx.moveTo(tx, ty); ctx.quadraticCurveTo(tx + lean * 0.5, ty - h * 0.5, topX, topY); ctx.stroke();
+    ctx.strokeStyle = '#8b5a2b'; ctx.lineWidth = 4;
+    ctx.beginPath(); ctx.moveTo(tx, ty); ctx.quadraticCurveTo(tx + lean * 0.5, ty - h * 0.5, topX, topY); ctx.stroke();
+    ctx.strokeStyle = '#6b3a1b'; ctx.lineWidth = 1;
+    for (let r = 0.2; r < 0.9; r += 0.15) {
+      const rx = tx + lean * r, ry = ty - h * r;
+      ctx.beginPath(); ctx.moveTo(rx - 3, ry); ctx.lineTo(rx + 3, ry); ctx.stroke();
+    }
+    for (let a = 0; a < 7; a++) {
+      const angle = -Math.PI / 2 + (a - 3) * 0.45;
+      const len = 30 + Math.random() * 10;
+      const droop = 12;
+      const endX = topX + Math.cos(angle) * len;
+      const endY = topY + Math.sin(angle) * len + droop;
+      const cpX = topX + Math.cos(angle) * len * 0.6;
+      const cpY = topY + Math.sin(angle) * len * 0.3;
+      ctx.strokeStyle = '#1a5a1a'; ctx.lineWidth = 4;
+      ctx.beginPath(); ctx.moveTo(topX, topY); ctx.quadraticCurveTo(cpX, cpY, endX, endY); ctx.stroke();
+      ctx.strokeStyle = '#2d8a2d'; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.moveTo(topX, topY); ctx.quadraticCurveTo(cpX, cpY, endX, endY); ctx.stroke();
+    }
+    ctx.fillStyle = '#6b3a1b';
+    for (let c = 0; c < 3; c++) {
+      const cx = topX - 4 + c * 4, cy = topY + 2 + c * 2;
+      ctx.beginPath(); ctx.arc(cx, cy, 3, 0, Math.PI * 2); ctx.fill();
+    }
+  },
+
+  drawCactus(ctx, tx, ty) {
+    const h = 30 + (tx % 15);
+    // Main body
+    ctx.fillStyle = '#2a7a2a';
+    ctx.fillRect(tx - 4, ty - h, 8, h);
+    ctx.strokeStyle = '#1a5a1a'; ctx.lineWidth = 1;
+    ctx.strokeRect(tx - 4, ty - h, 8, h);
+    // Arms
+    ctx.fillRect(tx - 12, ty - h * 0.6, 8, 5);
+    ctx.fillRect(tx - 12, ty - h * 0.6 - 12, 5, 12);
+    ctx.fillRect(tx + 4, ty - h * 0.4, 10, 5);
+    ctx.fillRect(tx + 9, ty - h * 0.4 - 10, 5, 10);
+  },
+
+  drawPine(ctx, tx, ty) {
+    const h = 45 + (tx % 20);
+    // Trunk
+    ctx.fillStyle = '#5a3a1a';
+    ctx.fillRect(tx - 3, ty - 12, 6, 12);
+    // Snow-covered layers
+    for (let i = 0; i < 4; i++) {
+      const layerW = 22 - i * 4;
+      const layerY = ty - 12 - i * (h / 5);
+      ctx.beginPath();
+      ctx.moveTo(tx - layerW, layerY);
+      ctx.lineTo(tx, layerY - h / 5);
+      ctx.lineTo(tx + layerW, layerY);
+      ctx.closePath();
+      ctx.fillStyle = '#2a6a2a';
+      ctx.fill();
+      // Snow on top
+      ctx.beginPath();
+      ctx.moveTo(tx - layerW + 3, layerY);
+      ctx.lineTo(tx, layerY - h / 6);
+      ctx.lineTo(tx + layerW - 3, layerY);
+      ctx.closePath();
+      ctx.fillStyle = 'rgba(230,230,245,0.5)';
+      ctx.fill();
+    }
+  },
+
+  drawLamp(ctx, tx, ty) {
+    // Street lamp
+    ctx.strokeStyle = '#444'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(tx, ty); ctx.lineTo(tx, ty - 40); ctx.stroke();
+    // Arm
+    ctx.beginPath(); ctx.moveTo(tx, ty - 40); ctx.lineTo(tx + 8, ty - 42); ctx.stroke();
+    // Light
+    ctx.fillStyle = '#ffa';
+    ctx.beginPath(); ctx.arc(tx + 8, ty - 42, 4, 0, Math.PI * 2); ctx.fill();
+    // Glow
+    ctx.fillStyle = 'rgba(255,255,150,0.15)';
+    ctx.beginPath(); ctx.arc(tx + 8, ty - 42, 20, 0, Math.PI * 2); ctx.fill();
   }
 };
 
@@ -512,25 +860,27 @@ class Tank {
     this.barrelLen = 20;
     this.facingRight = true;
     this.falling = false;
+    this.smokeActive = false;
+    // Match stats
+    this.matchDamage = 0;
+    this.matchKills = 0;
   }
 
   updateY() {
     this.y = Terrain.heightAt(this.x);
   }
 
-  // Apply gravity — check if tank should fall into crater
   applyGravity() {
     const targetY = Terrain.heightAt(this.x);
     if (this.y < targetY) {
       this.y = Math.min(this.y + 3, targetY);
-      return this.y < targetY; // still falling
+      return this.y < targetY;
     }
     return false;
   }
 
   draw(ctx, isActive) {
     const tx = this.x, ty = this.y;
-    // Shield glow
     if (this.shield) {
       ctx.beginPath();
       ctx.arc(tx, ty - 10, 25, 0, Math.PI * 2);
@@ -538,22 +888,18 @@ class Tank {
       ctx.lineWidth = 3;
       ctx.stroke();
     }
-    // Tank body
     ctx.fillStyle = this.color;
     ctx.fillRect(tx - this.width / 2, ty - this.height, this.width, this.height);
-    // Turret dome
     ctx.beginPath();
     ctx.arc(tx, ty - this.height, 8, Math.PI, 0);
     ctx.fillStyle = this.color;
     ctx.fill();
-    // Darker outline
     ctx.strokeStyle = '#000';
     ctx.lineWidth = 1.5;
     ctx.strokeRect(tx - this.width / 2, ty - this.height, this.width, this.height);
     ctx.beginPath();
     ctx.arc(tx, ty - this.height, 8, Math.PI, 0);
     ctx.stroke();
-    // Barrel
     const radAngle = this.facingRight
       ? -this.angle * Math.PI / 180
       : -(180 - this.angle) * Math.PI / 180;
@@ -565,10 +911,8 @@ class Tank {
     ctx.moveTo(tx, ty - this.height);
     ctx.lineTo(bx, by);
     ctx.stroke();
-    // Tracks
     ctx.fillStyle = '#333';
     ctx.fillRect(tx - this.width / 2 - 2, ty - 3, this.width + 4, 4);
-    // HP bar above
     const hpW = 30;
     const hpX = tx - hpW / 2;
     const hpY = ty - this.height - 22;
@@ -576,12 +920,10 @@ class Tank {
     ctx.fillRect(hpX, hpY, hpW, 5);
     ctx.fillStyle = this.hp > 50 ? '#4f4' : this.hp > 25 ? '#ff0' : '#f44';
     ctx.fillRect(hpX, hpY, hpW * (this.hp / this.maxHp), 5);
-    // Name
     ctx.fillStyle = '#fff';
     ctx.font = '10px Courier New';
     ctx.textAlign = 'center';
     ctx.fillText(this.name, tx, hpY - 3);
-    // Active indicator
     if (isActive) {
       ctx.fillStyle = '#ff0';
       ctx.beginPath();
@@ -640,12 +982,10 @@ const Frederic = {
     const cx = this.x, cy = this.y;
     const breathe = Math.sin(this.phase * 2) * 2;
     const scale = this.angry ? 1.15 : 1;
-    // Cloud shadow
     ctx.fillStyle = 'rgba(0,0,0,0.08)';
     ctx.beginPath();
     ctx.ellipse(cx, cy + 45 + breathe, 35 * scale, 8, 0, 0, Math.PI * 2);
     ctx.fill();
-    // Cloud body (overlapping circles) — pulsates when angry
     const baseColor = this.angry ? '#555' : '#dde';
     const darkColor = this.angry ? '#3a3a3a' : '#bbc';
     const puffs = [
@@ -653,43 +993,35 @@ const Frederic = {
       [-12, -14, 20 * scale], [12, -14, 20 * scale], [0, 10, 22 * scale],
       [-18, -4, 16 * scale], [18, -4, 16 * scale]
     ];
-    // Outer dark layer
     ctx.fillStyle = darkColor;
     puffs.forEach(([dx, dy, r]) => {
       ctx.beginPath();
       ctx.arc(cx + dx, cy + dy + breathe, r + 2, 0, Math.PI * 2);
       ctx.fill();
     });
-    // Main cloud fill
     ctx.fillStyle = baseColor;
     puffs.forEach(([dx, dy, r]) => {
       ctx.beginPath();
       ctx.arc(cx + dx, cy + dy + breathe, r, 0, Math.PI * 2);
       ctx.fill();
     });
-    // Highlight on top
     ctx.fillStyle = this.angry ? '#777' : '#eef';
     [[-10, -14, 14 * scale], [10, -14, 14 * scale], [0, -6, 18 * scale]].forEach(([dx, dy, r]) => {
       ctx.beginPath();
       ctx.arc(cx + dx, cy + dy + breathe - 3, r, 0, Math.PI * 2);
       ctx.fill();
     });
-    // Face
     const faceY = cy + 2 + breathe;
-    // Eyes — bigger, more expressive
     ctx.fillStyle = '#fff';
     ctx.beginPath(); ctx.arc(cx - 11, faceY - 5, 7, 0, Math.PI * 2); ctx.fill();
     ctx.beginPath(); ctx.arc(cx + 11, faceY - 5, 7, 0, Math.PI * 2); ctx.fill();
-    // Pupils (follow nearest tank if angry)
     const pupilOff = this.angry ? Math.sin(this.phase) * 2 : 0;
     ctx.fillStyle = this.angry ? '#c00' : '#222';
     ctx.beginPath(); ctx.arc(cx - 11 + pupilOff, faceY - 4, 3.5, 0, Math.PI * 2); ctx.fill();
     ctx.beginPath(); ctx.arc(cx + 11 + pupilOff, faceY - 4, 3.5, 0, Math.PI * 2); ctx.fill();
-    // Eye glint
     ctx.fillStyle = '#fff';
     ctx.beginPath(); ctx.arc(cx - 13, faceY - 7, 1.5, 0, Math.PI * 2); ctx.fill();
     ctx.beginPath(); ctx.arc(cx + 9, faceY - 7, 1.5, 0, Math.PI * 2); ctx.fill();
-    // Eyebrows (angry = thick, slanted down inward)
     ctx.strokeStyle = '#000';
     ctx.lineWidth = this.angry ? 3 : 2;
     if (this.angry) {
@@ -699,31 +1031,25 @@ const Frederic = {
       ctx.beginPath(); ctx.moveTo(cx - 17, faceY - 13); ctx.lineTo(cx - 5, faceY - 14); ctx.stroke();
       ctx.beginPath(); ctx.moveTo(cx + 17, faceY - 13); ctx.lineTo(cx + 5, faceY - 14); ctx.stroke();
     }
-    // Mouth
     ctx.beginPath();
     if (this.angry) {
-      // Open angry mouth with teeth
       ctx.moveTo(cx - 10, faceY + 8);
       ctx.quadraticCurveTo(cx, faceY + 1, cx + 10, faceY + 8);
       ctx.strokeStyle = '#000'; ctx.lineWidth = 2; ctx.stroke();
-      // Teeth
       ctx.fillStyle = '#fff';
       for (let t = -6; t <= 6; t += 4) {
         ctx.fillRect(cx + t - 1, faceY + 4, 3, 3);
       }
     } else {
-      // Neutral slight frown
       ctx.moveTo(cx - 7, faceY + 6);
       ctx.quadraticCurveTo(cx, faceY + 4, cx + 7, faceY + 6);
       ctx.strokeStyle = '#000'; ctx.lineWidth = 2; ctx.stroke();
     }
-    // Cheek blush when angry
     if (this.angry) {
       ctx.fillStyle = 'rgba(200,50,50,0.3)';
       ctx.beginPath(); ctx.arc(cx - 20, faceY + 2, 5, 0, Math.PI * 2); ctx.fill();
       ctx.beginPath(); ctx.arc(cx + 20, faceY + 2, 5, 0, Math.PI * 2); ctx.fill();
     }
-    // Name
     ctx.fillStyle = this.angry ? '#f44' : '#556';
     ctx.font = 'bold 11px Courier New';
     ctx.textAlign = 'center';
@@ -789,22 +1115,93 @@ const Explosions = {
       const t = e.time / e.maxTime;
       const r = e.radius * (0.3 + t * 0.7);
       const alpha = 1 - t;
-      // Outer glow
       ctx.beginPath();
       ctx.arc(e.x, e.y, r * 1.3, 0, Math.PI * 2);
       ctx.fillStyle = `rgba(255,100,0,${alpha * 0.3})`;
       ctx.fill();
-      // Core
       ctx.beginPath();
       ctx.arc(e.x, e.y, r, 0, Math.PI * 2);
       ctx.fillStyle = `rgba(255,200,50,${alpha * 0.7})`;
       ctx.fill();
-      // Hot center
       ctx.beginPath();
       ctx.arc(e.x, e.y, r * 0.4, 0, Math.PI * 2);
       ctx.fillStyle = `rgba(255,255,200,${alpha})`;
       ctx.fill();
     });
+  }
+};
+
+// --- Floating Damage Numbers ---
+const DamageNumbers = {
+  spawn(x, y, dmg, isHeal) {
+    const el = document.createElement('div');
+    el.className = 'dmg-float';
+    el.textContent = isHeal ? ('+' + dmg) : ('-' + dmg);
+    el.style.left = x + 'px';
+    el.style.top = y + 'px';
+    el.style.color = isHeal ? '#4f4' : '#f44';
+    el.style.fontSize = (dmg > 30 ? '1.6em' : '1.1em');
+    document.getElementById('ui-overlay').appendChild(el);
+    setTimeout(() => el.remove(), 1200);
+  }
+};
+
+// --- Camera Shake ---
+const CameraShake = {
+  intensity: 0,
+  duration: 0,
+  timer: 0,
+  offsetX: 0,
+  offsetY: 0,
+
+  trigger(intensity, duration) {
+    this.intensity = intensity;
+    this.duration = duration;
+    this.timer = duration;
+  },
+
+  update(dt) {
+    if (this.timer > 0) {
+      this.timer -= dt;
+      const t = this.timer / this.duration;
+      this.offsetX = (Math.random() - 0.5) * this.intensity * t * 2;
+      this.offsetY = (Math.random() - 0.5) * this.intensity * t * 2;
+    } else {
+      this.offsetX = 0;
+      this.offsetY = 0;
+    }
+  }
+};
+
+// --- Kill Streak ---
+const KillStreak = {
+  count: 0,
+  lastKiller: null,
+
+  reset() { this.count = 0; this.lastKiller = null; },
+
+  recordKill(killer) {
+    if (this.lastKiller === killer) {
+      this.count++;
+    } else {
+      this.count = 1;
+      this.lastKiller = killer;
+    }
+    if (this.count > (Progression.data.killStreakMax || 0)) {
+      Progression.data.killStreakMax = this.count;
+      Progression.save();
+    }
+    if (this.count >= 2) this.announce(this.count);
+  },
+
+  announce(count) {
+    const names = { 2: 'DOUBLE KILL!', 3: 'TRIPLE KILL!', 4: 'MEGA KILL!', 5: 'UNSTOPPABLE!' };
+    const text = names[Math.min(count, 5)] || ('GODLIKE! x' + count);
+    const el = document.createElement('div');
+    el.className = 'streak-announce';
+    el.textContent = text;
+    document.getElementById('ui-overlay').appendChild(el);
+    setTimeout(() => el.remove(), 2000);
   }
 };
 
@@ -816,12 +1213,16 @@ const Projectile = {
   type: 'shell',
   drillDepth: 0,
   drilling: false,
+  bounces: 0,
+  homingTarget: null,
 
-  launch(x, y, angle, power, wind, type) {
+  launch(x, y, angle, power, wind, type, target) {
     this.active = true;
     this.type = type || 'shell';
     this.drilling = false;
     this.drillDepth = 0;
+    this.bounces = 0;
+    this.homingTarget = target || null;
     const rad = -angle * Math.PI / 180;
     const speed = power * 0.18;
     this.x = x; this.y = y;
@@ -831,14 +1232,26 @@ const Projectile = {
     Audio.fire();
   },
 
-  update(dt, wind, tanks) {
+  update(dt, wind, tanks, gravity) {
     if (!this.active) return null;
+    const grav = gravity || 0.08;
     const steps = 3;
     for (let s = 0; s < steps; s++) {
-      // Gravity
-      this.vy += 0.08;
-      // Wind
+      this.vy += grav;
       this.vx += wind * 0.0005;
+
+      // Homing behavior
+      if (this.type === 'homing' && this.homingTarget && this.homingTarget.hp > 0) {
+        const dx = this.homingTarget.x - this.x;
+        const dy = (this.homingTarget.y - this.homingTarget.height / 2) - this.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist > 5) {
+          const strength = 0.015;
+          this.vx += (dx / dist) * strength;
+          this.vy += (dy / dist) * strength;
+        }
+      }
+
       this.x += this.vx;
       this.y += this.vy;
       this.trail.push({ x: this.x, y: this.y });
@@ -850,7 +1263,7 @@ const Projectile = {
         return { type: 'miss' };
       }
 
-      // Drill bomb — penetrates terrain
+      // Drill bomb
       if (this.type === 'drill' && this.y >= Terrain.heightAt(this.x)) {
         if (!this.drilling) this.drilling = true;
         this.drillDepth++;
@@ -861,17 +1274,26 @@ const Projectile = {
         continue;
       }
 
+      // Bouncing bomb
+      if (this.type === 'bouncing' && this.y >= Terrain.heightAt(this.x) && this.bounces < 3) {
+        this.bounces++;
+        this.vy = -Math.abs(this.vy) * 0.6;
+        this.y = Terrain.heightAt(this.x) - 1;
+        Audio.bounce();
+        Particles.add(this.x, this.y, 5, '#ff0', 2, 0.3);
+        continue;
+      }
+
       // Terrain collision
       if (this.y >= Terrain.heightAt(this.x) && !this.drilling) {
         this.active = false;
-        // Cluster bomb splits
         if (this.type === 'cluster') {
           return { type: 'cluster', x: this.x, y: this.y };
         }
         return { type: 'hit', x: this.x, y: this.y, weapon: this.type };
       }
 
-      // Frederic blocks? (only if Frederic event triggered)
+      // Frederic blocks
       if (Frederic.blocking) {
         const dx = this.x - Frederic.x, dy = this.y - Frederic.y;
         if (dx * dx + dy * dy < 900) {
@@ -881,7 +1303,7 @@ const Projectile = {
         }
       }
 
-      // Direct tank hit check
+      // Direct tank hit
       for (const tank of tanks) {
         if (tank.hp <= 0) continue;
         const dx = this.x - tank.x;
@@ -895,11 +1317,10 @@ const Projectile = {
         }
       }
     }
-    return null; // still flying
+    return null;
   },
 
   draw(ctx) {
-    // Trail
     if (this.trail.length > 1) {
       ctx.setLineDash([4, 6]);
       ctx.strokeStyle = 'rgba(255,255,100,0.5)';
@@ -912,11 +1333,15 @@ const Projectile = {
       ctx.stroke();
       ctx.setLineDash([]);
     }
-    // Projectile
     if (this.active) {
-      ctx.fillStyle = this.type === 'napalm' ? '#f80' : this.type === 'nuke' ? '#f0f' : '#ff0';
+      let color = '#ff0';
+      if (this.type === 'napalm') color = '#f80';
+      else if (this.type === 'nuke') color = '#f0f';
+      else if (this.type === 'homing') color = '#f44';
+      else if (this.type === 'bouncing') color = '#0ff';
+      ctx.fillStyle = color;
       ctx.beginPath();
-      ctx.arc(this.x, this.y, this.type === 'nuke' ? 5 : 3, 0, Math.PI * 2);
+      ctx.arc(this.x, this.y, this.type === 'nuke' ? 5 : this.type === 'homing' ? 4 : 3, 0, Math.PI * 2);
       ctx.fill();
       ctx.fillStyle = '#fff';
       ctx.beginPath();
@@ -947,7 +1372,6 @@ const Airstrike = {
     this.x += 4;
     const results = [];
 
-    // Drop bombs near target
     if (this.x > this.targetX - 80 && this.x < this.targetX + 80) {
       this.bombTimer += dt;
       if (this.bombTimer > 0.15 && this.dropped < 5) {
@@ -957,7 +1381,6 @@ const Airstrike = {
       }
     }
 
-    // Update bombs
     for (let i = this.bombs.length - 1; i >= 0; i--) {
       const b = this.bombs[i];
       b.vy += 0.15;
@@ -976,7 +1399,6 @@ const Airstrike = {
 
   draw(ctx) {
     if (!this.active) return;
-    // Plane
     ctx.fillStyle = '#556';
     ctx.beginPath();
     ctx.moveTo(this.x + 20, this.y);
@@ -985,16 +1407,150 @@ const Airstrike = {
     ctx.lineTo(this.x - 15, this.y + 5);
     ctx.closePath();
     ctx.fill();
-    // Wings
     ctx.fillStyle = '#667';
     ctx.fillRect(this.x - 5, this.y - 12, 10, 24);
-    // Bombs
     this.bombs.forEach(b => {
       ctx.fillStyle = '#333';
       ctx.beginPath();
       ctx.ellipse(b.x, b.y, 3, 5, 0, 0, Math.PI * 2);
       ctx.fill();
     });
+  }
+};
+
+// --- Meteor Shower ---
+const MeteorShower = {
+  active: false,
+  meteors: [],
+  spawnTimer: 0,
+  spawned: 0,
+  maxMeteors: 8,
+
+  start() {
+    this.active = true;
+    this.meteors = [];
+    this.spawnTimer = 0;
+    this.spawned = 0;
+  },
+
+  update(dt) {
+    if (!this.active) return [];
+    const results = [];
+
+    this.spawnTimer += dt;
+    if (this.spawnTimer > 0.2 && this.spawned < this.maxMeteors) {
+      const x = 50 + Math.random() * (W - 100);
+      this.meteors.push({ x, y: -20, vx: (Math.random() - 0.5) * 2, vy: 3 + Math.random() * 2 });
+      this.spawnTimer = 0;
+      this.spawned++;
+    }
+
+    for (let i = this.meteors.length - 1; i >= 0; i--) {
+      const m = this.meteors[i];
+      m.x += m.vx;
+      m.y += m.vy;
+      m.vy += 0.1;
+      // Trail
+      Particles.add(m.x, m.y, 1, '#f80', 1, 0.3);
+      if (m.y >= Terrain.heightAt(m.x)) {
+        results.push({ type: 'hit', x: m.x, y: m.y, weapon: 'meteor' });
+        this.meteors.splice(i, 1);
+      }
+    }
+
+    if (this.spawned >= this.maxMeteors && this.meteors.length === 0) {
+      this.active = false;
+    }
+    return results;
+  },
+
+  draw(ctx) {
+    this.meteors.forEach(m => {
+      ctx.fillStyle = '#f80';
+      ctx.beginPath();
+      ctx.arc(m.x, m.y, 4, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#ff0';
+      ctx.beginPath();
+      ctx.arc(m.x, m.y, 2, 0, Math.PI * 2);
+      ctx.fill();
+    });
+  }
+};
+
+// --- Laser Beam Effect ---
+const LaserBeam = {
+  active: false,
+  startX: 0, startY: 0, endX: 0, endY: 0,
+  timer: 0, hitTarget: null,
+
+  fire(sx, sy, angle, facingRight, tanks) {
+    this.active = true;
+    this.timer = 0.5;
+    this.startX = sx;
+    this.startY = sy;
+    this.hitTarget = null;
+    Audio.laser();
+
+    const rad = facingRight ? -angle * Math.PI / 180 : -(180 - angle) * Math.PI / 180;
+    const dx = Math.cos(rad);
+    const dy = Math.sin(rad);
+
+    // Ray march
+    let x = sx, y = sy;
+    for (let i = 0; i < 2000; i++) {
+      x += dx * 2;
+      y += dy * 2;
+      if (x < 0 || x > W || y > H || y < -50) break;
+
+      // Check terrain
+      if (y >= Terrain.heightAt(x)) {
+        this.endX = x;
+        this.endY = y;
+        return { type: 'hit', x, y, weapon: 'laser' };
+      }
+
+      // Check tanks
+      for (const tank of tanks) {
+        if (tank.hp <= 0) continue;
+        const tdx = x - tank.x;
+        const tdy = y - (tank.y - tank.height / 2);
+        if (Math.abs(tdx) < tank.width / 2 + 3 && Math.abs(tdy) < tank.height / 2 + 5) {
+          this.endX = x;
+          this.endY = y;
+          this.hitTarget = tank;
+          return { type: 'hit', x, y, weapon: 'laser', directHit: tank };
+        }
+      }
+    }
+    this.endX = x;
+    this.endY = y;
+    return { type: 'miss' };
+  },
+
+  update(dt) {
+    if (!this.active) return;
+    this.timer -= dt;
+    if (this.timer <= 0) this.active = false;
+  },
+
+  draw(ctx) {
+    if (!this.active) return;
+    const alpha = Math.max(0, this.timer / 0.5);
+    // Outer glow
+    ctx.strokeStyle = `rgba(255,50,50,${alpha * 0.4})`;
+    ctx.lineWidth = 8;
+    ctx.beginPath();
+    ctx.moveTo(this.startX, this.startY);
+    ctx.lineTo(this.endX, this.endY);
+    ctx.stroke();
+    // Core beam
+    ctx.strokeStyle = `rgba(255,200,200,${alpha})`;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(this.startX, this.startY);
+    ctx.lineTo(this.endX, this.endY);
+    ctx.stroke();
   }
 };
 
@@ -1031,7 +1587,6 @@ const Lightning = {
       ctx.beginPath();
       b.points.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
       ctx.stroke();
-      // Thinner core
       ctx.strokeStyle = `rgba(255,255,255,${alpha})`;
       ctx.lineWidth = 1;
       ctx.beginPath();
@@ -1042,10 +1597,83 @@ const Lightning = {
   }
 };
 
+// --- Stars for space biome ---
+const Stars = {
+  list: [],
+  generated: false,
+
+  generate() {
+    this.list = [];
+    for (let i = 0; i < 200; i++) {
+      this.list.push({
+        x: Math.random() * W,
+        y: Math.random() * H * 0.85,
+        size: 0.5 + Math.random() * 2,
+        twinkle: Math.random() * Math.PI * 2
+      });
+    }
+    this.generated = true;
+  },
+
+  draw(ctx, time) {
+    this.list.forEach(s => {
+      const alpha = 0.5 + Math.sin(time * 2 + s.twinkle) * 0.4;
+      ctx.fillStyle = `rgba(255,255,255,${alpha})`;
+      ctx.fillRect(s.x, s.y, s.size, s.size);
+    });
+  }
+};
+
+// --- Biome-specific ambient particles ---
+const AmbientParticles = {
+  list: [],
+
+  generate(biome) {
+    this.list = [];
+    if (biome === 'winter') {
+      for (let i = 0; i < 60; i++) {
+        this.list.push({
+          x: Math.random() * W, y: Math.random() * H,
+          vx: (Math.random() - 0.5) * 0.5, vy: 0.3 + Math.random() * 0.5,
+          size: 1 + Math.random() * 3, color: '#fff'
+        });
+      }
+    } else if (biome === 'volcanic') {
+      for (let i = 0; i < 30; i++) {
+        this.list.push({
+          x: Math.random() * W, y: Math.random() * H,
+          vx: (Math.random() - 0.5) * 0.3, vy: -0.2 - Math.random() * 0.3,
+          size: 1 + Math.random() * 2, color: '#888'
+        });
+      }
+    }
+  },
+
+  update(dt) {
+    this.list.forEach(p => {
+      p.x += p.vx;
+      p.y += p.vy;
+      if (p.y > H) { p.y = -5; p.x = Math.random() * W; }
+      if (p.y < -10) { p.y = H + 5; p.x = Math.random() * W; }
+      if (p.x < -5) p.x = W + 5;
+      if (p.x > W + 5) p.x = -5;
+    });
+  },
+
+  draw(ctx) {
+    this.list.forEach(p => {
+      ctx.fillStyle = p.color;
+      ctx.globalAlpha = 0.6;
+      ctx.fillRect(p.x, p.y, p.size, p.size);
+    });
+    ctx.globalAlpha = 1;
+  }
+};
+
 // --- Main Game Controller ---
 const Game = {
-  state: 'menu', // menu, playing, shop, animating, gameover
-  mode: 'quick', // quick, vsai, campaign
+  state: 'menu',
+  mode: 'quick',
   tanks: [],
   turnIndex: 0,
   wind: 0,
@@ -1057,6 +1685,22 @@ const Game = {
   cloudEventTimer: 0,
   animCallback: null,
   gravityChecking: false,
+  currentBiome: Progression.data.selectedBiome || 'tropical',
+  matchWeaponUses: {},
+
+  selectBiome(biome) {
+    this.currentBiome = biome;
+    Progression.data.selectedBiome = biome;
+    Progression.save();
+    // Update biome buttons
+    document.querySelectorAll('.biome-btn').forEach(btn => btn.classList.remove('active'));
+    document.querySelector(`.biome-btn[onclick*="${biome}"]`).classList.add('active');
+    // Regenerate terrain for menu background
+    Terrain.generate(W, H, biome);
+    if (BIOMES[biome].hasStars && !Stars.generated) Stars.generate();
+    AmbientParticles.generate(biome);
+    Audio.click();
+  },
 
   // --- Menu ---
   showMenu() {
@@ -1065,12 +1709,47 @@ const Game = {
     document.getElementById('hud').classList.add('hidden');
     document.getElementById('controls').classList.add('hidden');
     document.getElementById('ai-select').style.display = 'none';
+    document.getElementById('victory-screen').classList.add('hidden');
     this.hideMsg();
+    // Show level
+    document.getElementById('menu-level').textContent =
+      'Level ' + Progression.data.level + ' | XP: ' + Progression.data.xp +
+      ' | Next: ' + (Progression.data.level * Progression.xpPerLevel);
+    // Set active biome button
+    document.querySelectorAll('.biome-btn').forEach(btn => btn.classList.remove('active'));
+    const activeBtn = document.querySelector(`.biome-btn[onclick*="${this.currentBiome}"]`);
+    if (activeBtn) activeBtn.classList.add('active');
   },
 
   showAISelect() {
     document.getElementById('ai-select').style.display = 'flex';
     Audio.click();
+  },
+
+  showStats() {
+    Audio.click();
+    const d = Progression.data;
+    const winRate = d.totalGames > 0 ? Math.round(d.wins / d.totalGames * 100) : 0;
+    document.getElementById('stats-body').innerHTML =
+      `<span>Level:</span> ${d.level}<br>` +
+      `<span>XP:</span> ${d.xp} / ${d.level * Progression.xpPerLevel}<br>` +
+      `<span>Total Games:</span> ${d.totalGames}<br>` +
+      `<span>Wins:</span> ${d.wins} (${winRate}%)<br>` +
+      `<span>Total Damage:</span> ${d.totalDamage}<br>` +
+      `<span>Total Kills:</span> ${d.totalKills}<br>` +
+      `<span>Best Kill Streak:</span> ${d.killStreakMax || 0}<br>` +
+      `<span>Favorite Weapon:</span> ${Progression.favoriteWeapon()}<br><br>` +
+      `<span>Unlocked Weapons:</span><br>` +
+      Object.entries(WEAPONS)
+        .filter(([k]) => Progression.isWeaponUnlocked(k))
+        .map(([k, w]) => w.icon + ' ' + w.name)
+        .join(', ');
+    document.getElementById('stats-screen').classList.remove('hidden');
+  },
+
+  closeStats() {
+    Audio.click();
+    document.getElementById('stats-screen').classList.add('hidden');
   },
 
   startQuickMatch() {
@@ -1111,11 +1790,24 @@ const Game = {
   initRound(tanks) {
     document.getElementById('menu-screen').classList.add('hidden');
     document.getElementById('shop-screen').classList.add('hidden');
+    document.getElementById('victory-screen').classList.add('hidden');
+    document.getElementById('smoke-screen').classList.add('hidden');
     this.hideMsg();
+    this.matchWeaponUses = {};
 
-    Terrain.generate(W, H);
+    // Campaign biome cycling
+    let biome = this.currentBiome;
+    if (this.mode === 'campaign') {
+      const biomeOrder = ['tropical','desert','tropical','winter','desert','volcanic','winter','city','space','volcanic'];
+      biome = biomeOrder[(this.campaignLevel - 1) % biomeOrder.length];
+      this.currentBiome = biome;
+    }
 
-    // Place tanks on terrain
+    Terrain.generate(W, H, biome);
+    if (BIOMES[biome].hasStars) Stars.generate();
+    AmbientParticles.generate(biome);
+
+    // Place tanks
     const margin = W * 0.15;
     tanks[0].x = margin + Math.random() * (W * 0.2);
     tanks[1].x = W - margin - Math.random() * (W * 0.2);
@@ -1125,10 +1817,14 @@ const Game = {
       t.hp = 100;
       t.updateY();
       t.shield = false;
+      t.smokeActive = false;
+      t.matchDamage = 0;
+      t.matchKills = 0;
     });
     this.tanks = tanks;
     this.turnIndex = 0;
-    this.wind = Math.round((Math.random() - 0.5) * 60);
+    const b = BIOMES[biome];
+    this.wind = b.noWind ? 0 : Math.round((Math.random() - 0.5) * 60);
     this.lastTrail = [];
     Frederic.init();
     Frederic.blocking = false;
@@ -1136,8 +1832,11 @@ const Game = {
     Explosions.list = [];
     Lightning.bolts = [];
     Airstrike.active = false;
+    MeteorShower.active = false;
+    LaserBeam.active = false;
     Projectile.active = false;
     Projectile.trail = [];
+    KillStreak.reset();
 
     this.state = 'playing';
     this.updateHUD();
@@ -1153,23 +1852,24 @@ const Game = {
     const cur = this.tanks[this.turnIndex];
     document.getElementById('hud-turn').textContent = cur.name + "'s turn";
     document.getElementById('hud-turn').style.color = cur.color;
-    const windStr = (this.wind > 0 ? '→ ' : this.wind < 0 ? '← ' : '') + Math.abs(this.wind);
+    const windStr = (this.wind > 0 ? '\u2192 ' : this.wind < 0 ? '\u2190 ' : '') + Math.abs(this.wind);
     document.getElementById('hud-wind').textContent = windStr;
     document.getElementById('hud-hp1').style.width = Math.max(0, this.tanks[0].hp) + '%';
     document.getElementById('hud-hp2').style.width = Math.max(0, this.tanks[1].hp) + '%';
     document.getElementById('hud-weapon').textContent = WEAPONS[cur.currentWeapon].name;
     document.getElementById('hud-coins').textContent = cur.coins;
+    document.getElementById('hud-level').textContent = Progression.data.level;
   },
 
   updateControls() {
     const cur = this.tanks[this.turnIndex];
     document.getElementById('ctrl-angle').value = cur.angle;
-    document.getElementById('ctrl-angle-val').textContent = cur.angle + '°';
+    document.getElementById('ctrl-angle-val').textContent = cur.angle + '\u00B0';
     document.getElementById('ctrl-power').value = cur.power;
     document.getElementById('ctrl-power-val').textContent = cur.power + '%';
     const w = WEAPONS[cur.currentWeapon];
     const count = cur.weapons[cur.currentWeapon];
-    document.getElementById('weapon-cycle').textContent = w.icon + ' ' + w.name + (count === Infinity ? ' ∞' : ' ×' + count);
+    document.getElementById('weapon-cycle').textContent = w.icon + ' ' + w.name + (count === Infinity ? ' \u221E' : ' \u00D7' + count);
     document.getElementById('fire-btn').disabled = (this.state !== 'playing');
   },
 
@@ -1191,6 +1891,10 @@ const Game = {
     cur.power = parseInt(document.getElementById('ctrl-power').value);
     const weapon = cur.currentWeapon;
 
+    // Track weapon usage
+    this.matchWeaponUses[weapon] = (this.matchWeaponUses[weapon] || 0) + 1;
+    Progression.data.weaponUses[weapon] = (Progression.data.weaponUses[weapon] || 0) + 1;
+
     // Handle special weapons
     if (weapon === 'shield') {
       cur.shield = true;
@@ -1208,6 +1912,71 @@ const Game = {
       setTimeout(() => this.endTurn(), 1200);
       return;
     }
+    if (weapon === 'repair') {
+      const healed = Math.min(25, cur.maxHp - cur.hp);
+      cur.hp = Math.min(cur.maxHp, cur.hp + 25);
+      this.useWeapon(cur, weapon);
+      Particles.add(cur.x, cur.y - 10, 15, '#4f4', 2, 0.8);
+      DamageNumbers.spawn(cur.x, cur.y - 30, healed, true);
+      Audio.heal();
+      this.showMsg('Repaired +' + healed + ' HP!', 1000);
+      setTimeout(() => this.endTurn(), 1200);
+      return;
+    }
+    if (weapon === 'dig') {
+      Terrain.digBelow(cur.x, 40);
+      cur.updateY();
+      this.useWeapon(cur, weapon);
+      Particles.add(cur.x, cur.y, 10, '#8a6e2f', 2, 0.5);
+      this.showMsg('Terrain dug!', 1000);
+      setTimeout(() => this.endTurn(), 1200);
+      return;
+    }
+    if (weapon === 'smoke') {
+      this.useWeapon(cur, weapon);
+      // Mark enemy as having smoke on their next turn
+      const enemy = this.tanks[1 - this.turnIndex];
+      enemy.smokeActive = true;
+      Particles.add(cur.x, cur.y, 30, '#888', 3, 1.5);
+      this.showMsg('Smoke screen deployed!', 1000);
+      setTimeout(() => this.endTurn(), 1200);
+      return;
+    }
+    if (weapon === 'earthquake') {
+      this.useWeapon(cur, weapon);
+      Terrain.shakeEarthquake();
+      CameraShake.trigger(15, 1.0);
+      Audio.rumble();
+      // Damage both tanks
+      this.tanks.forEach(t => {
+        if (t.hp > 0) {
+          const dmg = WEAPONS.earthquake.damage;
+          this.damageTank(t, dmg);
+          DamageNumbers.spawn(t.x, t.y - 30, dmg, false);
+          t.updateY();
+        }
+      });
+      Particles.add(W / 2, H * 0.5, 40, '#a80', 4, 1);
+      this.showMsg('EARTHQUAKE!', 1200);
+      setTimeout(() => this.postExplosion(), 1300);
+      this.state = 'animating';
+      document.getElementById('fire-btn').disabled = true;
+      return;
+    }
+    if (weapon === 'laser') {
+      const tip = cur.getBarrelTip();
+      this.useWeapon(cur, weapon);
+      const result = LaserBeam.fire(tip.x, tip.y, cur.angle, cur.facingRight, this.tanks);
+      this.state = 'animating';
+      document.getElementById('fire-btn').disabled = true;
+      setTimeout(() => {
+        if (result.type === 'hit') {
+          this.doExplosion(result.x, result.y, WEAPONS.laser.radius, WEAPONS.laser.damage);
+        }
+        this.postExplosion();
+      }, 500);
+      return;
+    }
     if (weapon === 'airstrike') {
       const enemy = this.tanks[1 - this.turnIndex];
       Airstrike.start(enemy.x);
@@ -1216,11 +1985,19 @@ const Game = {
       document.getElementById('fire-btn').disabled = true;
       return;
     }
+    if (weapon === 'meteor') {
+      MeteorShower.start();
+      this.useWeapon(cur, weapon);
+      this.state = 'animating';
+      document.getElementById('fire-btn').disabled = true;
+      return;
+    }
 
-    // Normal projectile
+    // Normal projectile (including homing, bouncing)
     const tip = cur.getBarrelTip();
     const actualAngle = cur.facingRight ? cur.angle : (180 - cur.angle);
-    Projectile.launch(tip.x, tip.y, actualAngle, cur.power, this.wind, weapon);
+    const homingTarget = weapon === 'homing' ? this.tanks[1 - this.turnIndex] : null;
+    Projectile.launch(tip.x, tip.y, actualAngle, cur.power, this.wind, weapon, homingTarget);
     this.useWeapon(cur, weapon);
     this.state = 'animating';
     document.getElementById('fire-btn').disabled = true;
@@ -1250,7 +2027,6 @@ const Game = {
       return;
     }
     if (result.type === 'cluster') {
-      // Spawn 5 mini explosions
       this.lastTrail = [...Projectile.trail];
       const cx = result.x, cy = result.y;
       let pending = 5;
@@ -1271,11 +2047,9 @@ const Game = {
       if (result.weapon === 'napalm') {
         this.doExplosion(result.x, result.y, w.radius, w.damage);
         Terrain.burnSurface(result.x, 60);
-        // Fire particles along surface
         for (let fx = result.x - 60; fx < result.x + 60; fx += 10) {
           Particles.add(fx, Terrain.heightAt(fx), 3, '#f80', 2, 1.5);
         }
-        // Extra damage to tanks in napalm zone
         this.tanks.forEach(t => {
           if (Math.abs(t.x - result.x) < 60) {
             this.damageTank(t, 15);
@@ -1297,6 +2071,9 @@ const Game = {
     Particles.add(x, y, 5, '#fff', 2, 0.3);
     Audio.explode(radius > 50);
 
+    // Camera shake proportional to radius
+    CameraShake.trigger(Math.min(radius * 0.3, 20), 0.4);
+
     // Damage tanks in blast radius
     this.tanks.forEach(t => {
       if (t.hp <= 0) return;
@@ -1304,7 +2081,10 @@ const Game = {
       if (dist < radius + 15) {
         const falloff = Math.max(0, 1 - dist / (radius + 15));
         const dmg = Math.round(damage * falloff);
-        this.damageTank(t, dmg);
+        if (dmg > 0) {
+          this.damageTank(t, dmg);
+          DamageNumbers.spawn(t.x, t.y - 30, dmg, false);
+        }
       }
     });
   },
@@ -1315,16 +2095,22 @@ const Game = {
       Particles.add(tank.x, tank.y - 10, 10, '#0ff', 3, 0.5);
       return;
     }
+    const prevHp = tank.hp;
     tank.hp = Math.max(0, tank.hp - dmg);
-    // Award coins to shooter
+    const actualDmg = prevHp - tank.hp;
+    // Award coins & track stats for shooter
     const shooter = this.tanks[this.turnIndex];
-    if (tank !== shooter) {
-      shooter.coins += dmg * 2;
+    if (tank !== shooter && actualDmg > 0) {
+      shooter.coins += actualDmg * 2;
+      shooter.matchDamage += actualDmg;
+      if (tank.hp <= 0) {
+        shooter.matchKills++;
+        KillStreak.recordKill(shooter);
+      }
     }
   },
 
   postExplosion() {
-    // Let tanks settle with gravity
     this.gravityChecking = true;
     const settle = () => {
       let anyFalling = false;
@@ -1335,7 +2121,6 @@ const Game = {
         requestAnimationFrame(settle);
       } else {
         this.gravityChecking = false;
-        // Check win
         const alive = this.tanks.filter(t => t.hp > 0);
         if (alive.length <= 1) {
           this.roundOver(alive[0] || null);
@@ -1348,10 +2133,30 @@ const Game = {
   },
 
   endTurn() {
+    // Clear smoke if active on current player
+    const cur = this.tanks[this.turnIndex];
+    document.getElementById('smoke-screen').classList.add('hidden');
+
     this.turnIndex = 1 - this.turnIndex;
-    this.wind += Math.round((Math.random() - 0.5) * 20);
-    this.wind = Math.max(-60, Math.min(60, this.wind));
+    const b = BIOMES[this.currentBiome];
+    if (!b.noWind) {
+      this.wind += Math.round((Math.random() - 0.5) * 20);
+      this.wind = Math.max(-60, Math.min(60, this.wind));
+    }
     this.state = 'playing';
+
+    // Apply smoke screen if next player has smoke active
+    const next = this.tanks[this.turnIndex];
+    if (next.smokeActive && !next.isAI) {
+      document.getElementById('smoke-screen').classList.remove('hidden');
+      next.smokeActive = false;
+      // Remove after a brief delay
+      setTimeout(() => {
+        document.getElementById('smoke-screen').classList.add('hidden');
+      }, 2500);
+    } else {
+      next.smokeActive = false;
+    }
 
     // Cloud event (15% chance)
     this.cloudEvent = null;
@@ -1364,8 +2169,7 @@ const Game = {
     this.updateControls();
 
     // AI turn
-    const cur = this.tanks[this.turnIndex];
-    if (cur.isAI && cur.hp > 0) {
+    if (next.isAI && next.hp > 0) {
       document.getElementById('fire-btn').disabled = true;
       setTimeout(() => this.aiTurn(), 800);
     }
@@ -1391,7 +2195,6 @@ const Game = {
       }
       case 'rain': {
         this.showMsg("Rain! Terrain gets slippery!", 1500);
-        // Tanks slide slightly toward lower terrain
         this.tanks.forEach(t => {
           const leftH = Terrain.heightAt(t.x - 10);
           const rightH = Terrain.heightAt(t.x + 10);
@@ -1400,7 +2203,6 @@ const Game = {
           t.x = Math.max(20, Math.min(W - 20, t.x));
           t.updateY();
         });
-        // Rain particles
         for (let i = 0; i < 50; i++) {
           Particles.add(Math.random() * W, Math.random() * H * 0.5, 1, '#8af', 1, 2);
         }
@@ -1415,7 +2217,6 @@ const Game = {
       }
       case 'block': {
         Frederic.blocking = true;
-        // Move Frederic between the tanks
         Frederic.x = (this.tanks[0].x + this.tanks[1].x) / 2;
         Frederic.y = H * 0.2;
         this.showMsg("Frederic might block your shot!", 1500);
@@ -1430,20 +2231,16 @@ const Game = {
     const target = this.tanks[1 - this.turnIndex];
     const diff = ai.aiDifficulty;
 
-    // Calculate angle to target
     const dx = target.x - ai.x;
-    const dy = target.y - ai.y;
     const dist = Math.abs(dx);
 
-    // Basic ballistic calculation
     let bestAngle = 45;
     let bestPower = 50;
 
-    // Simplified trajectory estimation
-    const g = 0.08 * 3; // gravity per frame * steps
+    const biomeGrav = (BIOMES[this.currentBiome] || BIOMES.tropical).gravity;
+    const g = biomeGrav * 3;
     const windEffect = this.wind * 0.0005 * 3;
 
-    // Try to find good angle/power
     let bestErr = Infinity;
     const angleRange = diff === 'easy' ? 30 : diff === 'medium' ? 10 : 3;
     const trials = diff === 'easy' ? 20 : diff === 'medium' ? 50 : 100;
@@ -1457,10 +2254,9 @@ const Game = {
       let vy = Math.sin(rad) * speed;
       let sx = ai.x, sy = ai.y - ai.height;
 
-      // Simulate
       let hit = false;
       for (let step = 0; step < 500; step++) {
-        vy += 0.08;
+        vy += biomeGrav;
         vx += windEffect / 3;
         sx += vx; sy += vy;
         if (sy > H + 50) break;
@@ -1477,7 +2273,6 @@ const Game = {
       }
     }
 
-    // Add noise based on difficulty
     bestAngle += (Math.random() - 0.5) * angleRange * 2;
     bestPower += (Math.random() - 0.5) * angleRange;
     bestAngle = Math.max(5, Math.min(85, bestAngle));
@@ -1486,9 +2281,8 @@ const Game = {
     ai.angle = Math.round(bestAngle);
     ai.power = Math.round(bestPower);
 
-    // Update sliders to show AI's choice
     document.getElementById('ctrl-angle').value = ai.angle;
-    document.getElementById('ctrl-angle-val').textContent = ai.angle + '°';
+    document.getElementById('ctrl-angle-val').textContent = ai.angle + '\u00B0';
     document.getElementById('ctrl-power').value = ai.power;
     document.getElementById('ctrl-power-val').textContent = ai.power + '%';
 
@@ -1501,31 +2295,76 @@ const Game = {
   roundOver(winner) {
     this.state = 'gameover';
     document.getElementById('controls').classList.add('hidden');
+    document.getElementById('smoke-screen').classList.add('hidden');
+
+    // Calculate XP
+    const player = this.tanks.find(t => !t.isAI) || this.tanks[0];
+    const won = winner === player;
+    const xpGained = Math.round(player.matchDamage * 0.5 + (won ? 100 : 20) + player.matchKills * 30);
+    const leveledUp = Progression.addXP(xpGained);
+
+    // Record to progression
+    const mostUsed = Object.entries(this.matchWeaponUses).sort((a,b) => b[1] - a[1])[0];
+    Progression.recordGame(won, player.matchDamage, player.matchKills, mostUsed ? mostUsed[0] : 'shell');
 
     if (winner) {
       winner.coins += 100;
       Audio.win();
-      this.showMsg(winner.name + ' WINS!', 0);
-    } else {
-      this.showMsg('DRAW!', 0);
     }
 
+    // Show victory/defeat screen
     setTimeout(() => {
-      if (this.mode === 'campaign' && winner && !winner.isAI) {
+      const titleEl = document.getElementById('victory-title');
+      const statsEl = document.getElementById('victory-stats');
+
+      if (winner) {
+        titleEl.textContent = winner.name + ' WINS!';
+        titleEl.style.color = won ? '#4f4' : '#f44';
+      } else {
+        titleEl.textContent = 'DRAW!';
+        titleEl.style.color = '#ff6';
+      }
+
+      let statsHtml =
+        `Damage Dealt: <span>${player.matchDamage}</span><br>` +
+        `Kills: <span>${player.matchKills}</span><br>` +
+        `XP Gained: <span>+${xpGained}</span><br>` +
+        `Level: <span>${Progression.data.level}</span>`;
+      if (leveledUp) {
+        statsHtml += `<br><span style="color:#ff0;font-size:1.3em">LEVEL UP!</span>`;
+        // Check new weapon unlocks
+        const newWeapons = Object.entries(WEAPONS).filter(([k, w]) => w.unlockLevel === Progression.data.level);
+        if (newWeapons.length > 0) {
+          statsHtml += '<br>New weapons unlocked: ' + newWeapons.map(([k, w]) => '<span>' + w.icon + ' ' + w.name + '</span>').join(', ');
+        }
+      }
+      statsEl.innerHTML = statsHtml;
+      document.getElementById('victory-screen').classList.remove('hidden');
+    }, 1500);
+  },
+
+  closeVictory() {
+    Audio.click();
+    document.getElementById('victory-screen').classList.add('hidden');
+
+    if (this.mode === 'campaign') {
+      const player = this.tanks.find(t => !t.isAI) || this.tanks[0];
+      const winner = this.tanks.find(t => t.hp > 0);
+      if (winner && !winner.isAI) {
         this.campaignLevel++;
         if (this.campaignLevel > 10) {
           this.showMsg('CAMPAIGN COMPLETE! You are the Tank Blaster champion!', 0);
           setTimeout(() => this.showMenu(), 3000);
         } else {
-          this.openShop(winner);
+          this.openShop(player);
         }
-      } else if (this.mode === 'campaign' && (!winner || winner.isAI)) {
-        this.showMsg('Campaign Over — You reached level ' + this.campaignLevel, 0);
-        setTimeout(() => this.showMenu(), 3000);
       } else {
+        this.showMsg('Campaign Over \u2014 You reached level ' + this.campaignLevel, 0);
         setTimeout(() => this.showMenu(), 3000);
       }
-    }, 2000);
+    } else {
+      this.showMenu();
+    }
   },
 
   // --- Shop ---
@@ -1540,23 +2379,29 @@ const Game = {
     const grid = document.getElementById('shop-grid');
     grid.innerHTML = '';
     Object.entries(WEAPONS).forEach(([key, w]) => {
-      if (key === 'shell') return; // always free
+      if (key === 'shell') return;
       const item = document.createElement('div');
       item.className = 'shop-item';
       const owned = playerTank.weapons[key] > 0;
+      const unlocked = Progression.isWeaponUnlocked(key);
       if (owned) item.classList.add('owned');
-      item.innerHTML = `
+      if (!unlocked) item.classList.add('locked');
+      let html = `
         <div class="shop-item-name">${w.icon} ${w.name}</div>
         <div class="shop-item-price">${w.price} coins${owned ? ' (owned: '+ playerTank.weapons[key]+')' : ''}</div>
         <div class="shop-item-desc">${w.desc}</div>
       `;
+      if (!unlocked) {
+        html += `<div class="shop-item-lock">Unlocks at Level ${w.unlockLevel}</div>`;
+      }
+      item.innerHTML = html;
       item.onclick = () => {
+        if (!unlocked) return;
         if (playerTank.coins >= w.price) {
           playerTank.coins -= w.price;
           playerTank.weapons[key] = (playerTank.weapons[key] || 0) + 1;
           Audio.click();
           document.getElementById('shop-coins').textContent = 'Coins: ' + playerTank.coins;
-          // Refresh
           this.openShop(playerTank);
         }
       };
@@ -1588,88 +2433,121 @@ const Game = {
 
   // --- Rendering ---
   render() {
-    ctx.clearRect(0, 0, W, H);
+    const biome = this.currentBiome;
+    const b = BIOMES[biome] || BIOMES.tropical;
 
-    // Tropical sky gradient
+    ctx.save();
+    ctx.translate(CameraShake.offsetX, CameraShake.offsetY);
+    ctx.clearRect(-20, -20, W + 40, H + 40);
+
+    // Sky gradient
     const skyGrad = ctx.createLinearGradient(0, 0, 0, H * 0.7);
-    skyGrad.addColorStop(0, '#1e90ff');
-    skyGrad.addColorStop(0.3, '#4db8ff');
-    skyGrad.addColorStop(0.6, '#87ceeb');
-    skyGrad.addColorStop(0.85, '#ffe4b5');
-    skyGrad.addColorStop(1, '#ff9966');
+    b.sky.forEach(([c, s]) => skyGrad.addColorStop(s, c));
     ctx.fillStyle = skyGrad;
     ctx.fillRect(0, 0, W, H);
+
+    // Stars (space biome)
+    if (b.hasStars) {
+      Stars.draw(ctx, performance.now() * 0.001);
+    }
 
     // Sun
     const sunX = W * 0.82, sunY = H * 0.18;
     const sunGlow = ctx.createRadialGradient(sunX, sunY, 10, sunX, sunY, 80);
-    sunGlow.addColorStop(0, 'rgba(255,255,200,0.9)');
-    sunGlow.addColorStop(0.3, 'rgba(255,200,100,0.4)');
-    sunGlow.addColorStop(1, 'rgba(255,150,50,0)');
+    sunGlow.addColorStop(0, b.sunGlowInner);
+    sunGlow.addColorStop(0.3, b.sunGlowInner.replace(/[\d.]+\)$/, '0.4)'));
+    sunGlow.addColorStop(1, b.sunGlowOuter);
     ctx.fillStyle = sunGlow;
     ctx.fillRect(sunX - 80, sunY - 80, 160, 160);
     ctx.beginPath();
     ctx.arc(sunX, sunY, 22, 0, Math.PI * 2);
-    ctx.fillStyle = '#fff5cc';
+    ctx.fillStyle = b.sunColor;
     ctx.fill();
 
-    // Background decorative clouds
-    ctx.fillStyle = 'rgba(255,255,255,0.4)';
-    const bgClouds = [[W*0.1, H*0.08, 40], [W*0.35, H*0.14, 30], [W*0.6, H*0.06, 35], [W*0.9, H*0.11, 25]];
-    bgClouds.forEach(([cx,cy,r]) => {
-      ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI*2); ctx.fill();
-      ctx.beginPath(); ctx.arc(cx-r*0.6, cy+4, r*0.7, 0, Math.PI*2); ctx.fill();
-      ctx.beginPath(); ctx.arc(cx+r*0.6, cy+4, r*0.7, 0, Math.PI*2); ctx.fill();
-      ctx.beginPath(); ctx.arc(cx, cy+6, r*0.5, 0, Math.PI*2); ctx.fill();
-    });
+    // Background clouds (skip for space/volcanic)
+    if (biome !== 'space' && biome !== 'volcanic') {
+      ctx.fillStyle = 'rgba(255,255,255,0.4)';
+      const bgClouds = [[W*0.1, H*0.08, 40], [W*0.35, H*0.14, 30], [W*0.6, H*0.06, 35], [W*0.9, H*0.11, 25]];
+      bgClouds.forEach(([cx,cy,r]) => {
+        ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(cx-r*0.6, cy+4, r*0.7, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(cx+r*0.6, cy+4, r*0.7, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(cx, cy+6, r*0.5, 0, Math.PI*2); ctx.fill();
+      });
+    }
 
-    // Ocean
+    // Background buildings for city biome
+    if (biome === 'city') {
+      const waterY = H * 0.85;
+      ctx.fillStyle = '#334';
+      for (let i = 0; i < 10; i++) {
+        const bx = i * (W / 10);
+        const bh = 60 + Math.sin(i * 2.3) * 40;
+        ctx.fillRect(bx, waterY - bh, W / 12, bh);
+        // Windows
+        ctx.fillStyle = '#ffa';
+        for (let wy = waterY - bh + 5; wy < waterY - 3; wy += 8) {
+          for (let wx = bx + 3; wx < bx + W / 12 - 3; wx += 6) {
+            if (Math.random() > 0.3) ctx.fillRect(wx, wy, 3, 4);
+          }
+        }
+        ctx.fillStyle = '#334';
+      }
+    }
+
+    // Ocean / Lava / Space void
     const waterY = H * 0.85;
     // Beach foam strip
-    ctx.fillStyle = '#e8d8a8';
+    ctx.fillStyle = b.foam;
     ctx.fillRect(0, waterY - 3, W, 6);
     // Water
     const waterGrad = ctx.createLinearGradient(0, waterY, 0, H);
-    waterGrad.addColorStop(0, '#2a9ad4');
-    waterGrad.addColorStop(0.3, '#1a7ab4');
-    waterGrad.addColorStop(0.7, '#0d5a8d');
-    waterGrad.addColorStop(1, '#063a5d');
+    b.waterGrad.forEach(([c, s]) => waterGrad.addColorStop(s, c));
     ctx.fillStyle = waterGrad;
     ctx.fillRect(0, waterY, W, H - waterY);
-    // Wave highlights (animated)
-    const waveTime = performance.now() * 0.001;
-    // Foam wave at shore
-    ctx.strokeStyle = 'rgba(255,255,255,0.5)';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    for (let wx = 0; wx < W; wx += 2) {
-      const wh = Math.sin(wx * 0.03 + waveTime * 2) * 2;
-      wx === 0 ? ctx.moveTo(wx, waterY + wh) : ctx.lineTo(wx, waterY + wh);
-    }
-    ctx.stroke();
-    // Deeper wave lines
-    ctx.strokeStyle = 'rgba(100,200,255,0.2)';
-    ctx.lineWidth = 1;
-    for (let wy = waterY + 8; wy < H; wy += 14) {
+
+    // Animated waves (skip for space)
+    if (biome !== 'space') {
+      const waveTime = performance.now() * 0.001;
+      ctx.strokeStyle = b.waterFoam;
+      ctx.lineWidth = 2;
       ctx.beginPath();
-      for (let wx = 0; wx < W; wx += 3) {
-        const wh = Math.sin(wx * 0.02 + waveTime + wy * 0.1) * 2;
-        wx === 0 ? ctx.moveTo(wx, wy + wh) : ctx.lineTo(wx, wy + wh);
+      for (let wx = 0; wx < W; wx += 2) {
+        const wh = Math.sin(wx * 0.03 + waveTime * 2) * 2;
+        wx === 0 ? ctx.moveTo(wx, waterY + wh) : ctx.lineTo(wx, waterY + wh);
       }
       ctx.stroke();
-    }
-    // Sparkle reflections on water
-    ctx.fillStyle = 'rgba(255,255,255,0.3)';
-    for (let s = 0; s < 12; s++) {
-      const sx = ((s * 97.3 + waveTime * 20) % W);
-      const sy = waterY + 5 + ((s * 41.7) % (H - waterY - 10));
-      if (Math.sin(waveTime * 3 + s) > 0.7) {
-        ctx.fillRect(sx, sy, 2, 1);
+      ctx.strokeStyle = b.waterHighlight;
+      ctx.lineWidth = 1;
+      for (let wy = waterY + 8; wy < H; wy += 14) {
+        ctx.beginPath();
+        for (let wx = 0; wx < W; wx += 3) {
+          const wh = Math.sin(wx * 0.02 + waveTime + wy * 0.1) * 2;
+          wx === 0 ? ctx.moveTo(wx, wy + wh) : ctx.lineTo(wx, wy + wh);
+        }
+        ctx.stroke();
+      }
+      // Lava glow effect
+      if (b.hasLava) {
+        ctx.fillStyle = `rgba(255,100,0,${0.15 + Math.sin(waveTime * 3) * 0.1})`;
+        ctx.fillRect(0, waterY, W, H - waterY);
+      }
+      // Sparkle
+      if (!b.hasLava) {
+        ctx.fillStyle = 'rgba(255,255,255,0.3)';
+        for (let s = 0; s < 12; s++) {
+          const sx = ((s * 97.3 + waveTime * 20) % W);
+          const sy = waterY + 5 + ((s * 41.7) % (H - waterY - 10));
+          if (Math.sin(waveTime * 3 + s) > 0.7) ctx.fillRect(sx, sy, 2, 1);
+        }
       }
     }
 
     // Terrain
-    Terrain.draw(ctx);
+    Terrain.draw(ctx, biome);
+
+    // Ambient particles (snow, ash)
+    AmbientParticles.draw(ctx);
 
     // Trail from last shot
     if (this.lastTrail.length > 1) {
@@ -1696,10 +2574,18 @@ const Game = {
     // Airstrike
     Airstrike.draw(ctx);
 
+    // Meteor shower
+    MeteorShower.draw(ctx);
+
+    // Laser beam
+    LaserBeam.draw(ctx);
+
     // Effects
     Explosions.draw(ctx);
     Particles.draw(ctx);
     Lightning.draw(ctx);
+
+    ctx.restore();
   },
 
   // --- Game Loop ---
@@ -1713,10 +2599,15 @@ const Game = {
     Particles.update(dt);
     Explosions.update(dt);
     Lightning.update(dt);
+    CameraShake.update(dt);
+    LaserBeam.update(dt);
+    AmbientParticles.update(dt);
+
+    const biomeGrav = (BIOMES[this.currentBiome] || BIOMES.tropical).gravity;
 
     // Projectile
     if (Projectile.active) {
-      const result = Projectile.update(dt, this.wind, this.tanks);
+      const result = Projectile.update(dt, this.wind, this.tanks, biomeGrav);
       if (result) this.processHit(result);
     }
 
@@ -1728,6 +2619,18 @@ const Game = {
         this.doExplosion(h.x, h.y, w.radius, w.damage);
       });
       if (!Airstrike.active) {
+        this.postExplosion();
+      }
+    }
+
+    // Meteor shower
+    if (MeteorShower.active) {
+      const hits = MeteorShower.update(dt);
+      hits.forEach(h => {
+        const w = WEAPONS.meteor;
+        this.doExplosion(h.x, h.y, w.radius, w.damage);
+      });
+      if (!MeteorShower.active) {
         this.postExplosion();
       }
     }
@@ -1744,7 +2647,7 @@ const Game = {
 
 // --- Slider Events ---
 document.getElementById('ctrl-angle').addEventListener('input', function() {
-  document.getElementById('ctrl-angle-val').textContent = this.value + '°';
+  document.getElementById('ctrl-angle-val').textContent = this.value + '\u00B0';
   if (Game.state === 'playing') Game.tanks[Game.turnIndex].angle = parseInt(this.value);
 });
 document.getElementById('ctrl-power').addEventListener('input', function() {
@@ -1763,12 +2666,12 @@ document.addEventListener('keydown', e => {
     case 'ArrowLeft':
       cur.angle = Math.min(180, cur.angle + 1);
       angleEl.value = cur.angle;
-      document.getElementById('ctrl-angle-val').textContent = cur.angle + '°';
+      document.getElementById('ctrl-angle-val').textContent = cur.angle + '\u00B0';
       break;
     case 'ArrowRight':
       cur.angle = Math.max(0, cur.angle - 1);
       angleEl.value = cur.angle;
-      document.getElementById('ctrl-angle-val').textContent = cur.angle + '°';
+      document.getElementById('ctrl-angle-val').textContent = cur.angle + '\u00B0';
       break;
     case 'ArrowUp':
       cur.power = Math.min(100, cur.power + 1);
@@ -1793,8 +2696,11 @@ document.addEventListener('keydown', e => {
 });
 
 // --- Initial render for menu background ---
-Terrain.generate(W, H);
+Terrain.generate(W, H, Game.currentBiome);
+if (BIOMES[Game.currentBiome].hasStars) Stars.generate();
+AmbientParticles.generate(Game.currentBiome);
 Frederic.init();
+Game.showMenu();
 Game._looping = true;
 Game.lastTime = performance.now();
 requestAnimationFrame(t => Game.loop(t));
