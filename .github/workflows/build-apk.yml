@@ -1,0 +1,51 @@
+name: Build APK
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Install Cordova
+        run: npm install -g cordova
+      
+      - name: Create Cordova project
+        run: |
+          cordova create cordova-app com.charliemorison.tankblaster "Tank Blaster 2"
+          cd cordova-app
+          cordova platform add android
+          cp ../index.html www/index.html
+          cp ../manifest.json www/manifest.json
+          cp ../sw.js www/sw.js
+          cp ../icon-192.png www/icon-192.png
+          cp ../icon-512.png www/icon-512.png
+      
+      - name: Configure Cordova
+        run: |
+          cd cordova-app
+          # Set fullscreen and landscape
+          sed -i 's/<\/widget>/\n    <preference name="Orientation" value="landscape" \/>\n    <preference name="Fullscreen" value="true" \/>\n    <preference name="StatusBarOverlaysWebView" value="true" \/>\n<\/widget>/' config.xml
+      
+      - name: Build debug APK
+        run: |
+          cd cordova-app
+          cordova build android --debug
+      
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: tank-blaster-debug
+          path: cordova-app/platforms/android/app/build/outputs/apk/debug/*.apk
