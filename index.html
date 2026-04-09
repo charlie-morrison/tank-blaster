@@ -4,6 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Tank Blaster 2: The Crazy Artillery Game</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#ff6600">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="apple-touch-icon" href="icon-192.png">
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 html, body { width: 100%; height: 100%; overflow: hidden; background: #000; font-family: 'Courier New', monospace; touch-action: none; user-select: none; }
@@ -1794,6 +1798,7 @@ Frederic.init();
 Game._looping = true;
 Game.lastTime = performance.now();
 requestAnimationFrame(t => Game.loop(t));
+if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
 </script>
 </body>
 </html>
